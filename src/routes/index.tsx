@@ -226,6 +226,40 @@ function Home() {
               <div className="text-[11px] font-medium text-muted-foreground">today</div>
             </div>
           </div>
+          <div className="mt-3 pt-3 border-t border-border flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="w-8 h-8 rounded-full bg-temperature/30 grid place-items-center shrink-0">
+                <Thermometer className="w-4 h-4 text-temperature-foreground" />
+              </div>
+              <div className="min-w-0">
+                <div className="text-[10px] font-bold uppercase tracking-widest text-temperature-foreground">
+                  Temperature
+                </div>
+                {loading ? (
+                  <div className="mt-1 h-4 w-20 rounded-md bg-foreground/5 animate-pulse" />
+                ) : lastTemp ? (
+                  <div className="text-sm font-extrabold text-foreground leading-tight">
+                    {Number(lastTemp.value_c).toFixed(1)}°C
+                    <span className="ml-1 text-[11px] font-medium text-muted-foreground">
+                      · {timeAgo(lastTemp.occurred_at)}
+                    </span>
+                  </div>
+                ) : (
+                  <div className="text-sm font-medium text-muted-foreground">Not logged today</div>
+                )}
+              </div>
+            </div>
+            <Button
+              asChild
+              size="sm"
+              variant="outline"
+              className="rounded-full h-8 px-3 text-xs font-bold border-2 border-temperature/60 text-temperature-foreground hover:bg-temperature/20 shrink-0"
+            >
+              <Link to="/log/temp">
+                <Plus className="!w-3.5 !h-3.5" /> Log
+              </Link>
+            </Button>
+          </div>
         </Card>
 
         {/* CTAs */}
