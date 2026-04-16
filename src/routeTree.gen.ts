@@ -10,12 +10,26 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
+import { Route as HistoryRouteImport } from './routes/history'
+import { Route as BabySettingsRouteImport } from './routes/baby-settings'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as LogFeedRouteImport } from './routes/log.feed'
+import { Route as LogDiaperRouteImport } from './routes/log.diaper'
 
 const OnboardingRoute = OnboardingRouteImport.update({
   id: '/onboarding',
   path: '/onboarding',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HistoryRoute = HistoryRouteImport.update({
+  id: '/history',
+  path: '/history',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BabySettingsRoute = BabySettingsRouteImport.update({
+  id: '/baby-settings',
+  path: '/baby-settings',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -28,35 +42,83 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LogFeedRoute = LogFeedRouteImport.update({
+  id: '/log/feed',
+  path: '/log/feed',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const LogDiaperRoute = LogDiaperRouteImport.update({
+  id: '/log/diaper',
+  path: '/log/diaper',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/baby-settings': typeof BabySettingsRoute
+  '/history': typeof HistoryRoute
   '/onboarding': typeof OnboardingRoute
+  '/log/diaper': typeof LogDiaperRoute
+  '/log/feed': typeof LogFeedRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/baby-settings': typeof BabySettingsRoute
+  '/history': typeof HistoryRoute
   '/onboarding': typeof OnboardingRoute
+  '/log/diaper': typeof LogDiaperRoute
+  '/log/feed': typeof LogFeedRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
+  '/baby-settings': typeof BabySettingsRoute
+  '/history': typeof HistoryRoute
   '/onboarding': typeof OnboardingRoute
+  '/log/diaper': typeof LogDiaperRoute
+  '/log/feed': typeof LogFeedRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/auth' | '/onboarding'
+  fullPaths:
+    | '/'
+    | '/auth'
+    | '/baby-settings'
+    | '/history'
+    | '/onboarding'
+    | '/log/diaper'
+    | '/log/feed'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/auth' | '/onboarding'
-  id: '__root__' | '/' | '/auth' | '/onboarding'
+  to:
+    | '/'
+    | '/auth'
+    | '/baby-settings'
+    | '/history'
+    | '/onboarding'
+    | '/log/diaper'
+    | '/log/feed'
+  id:
+    | '__root__'
+    | '/'
+    | '/auth'
+    | '/baby-settings'
+    | '/history'
+    | '/onboarding'
+    | '/log/diaper'
+    | '/log/feed'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthRoute: typeof AuthRoute
+  BabySettingsRoute: typeof BabySettingsRoute
+  HistoryRoute: typeof HistoryRoute
   OnboardingRoute: typeof OnboardingRoute
+  LogDiaperRoute: typeof LogDiaperRoute
+  LogFeedRoute: typeof LogFeedRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -66,6 +128,20 @@ declare module '@tanstack/react-router' {
       path: '/onboarding'
       fullPath: '/onboarding'
       preLoaderRoute: typeof OnboardingRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/history': {
+      id: '/history'
+      path: '/history'
+      fullPath: '/history'
+      preLoaderRoute: typeof HistoryRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/baby-settings': {
+      id: '/baby-settings'
+      path: '/baby-settings'
+      fullPath: '/baby-settings'
+      preLoaderRoute: typeof BabySettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -82,13 +158,31 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/log/feed': {
+      id: '/log/feed'
+      path: '/log/feed'
+      fullPath: '/log/feed'
+      preLoaderRoute: typeof LogFeedRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/log/diaper': {
+      id: '/log/diaper'
+      path: '/log/diaper'
+      fullPath: '/log/diaper'
+      preLoaderRoute: typeof LogDiaperRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRoute,
+  BabySettingsRoute: BabySettingsRoute,
+  HistoryRoute: HistoryRoute,
   OnboardingRoute: OnboardingRoute,
+  LogDiaperRoute: LogDiaperRoute,
+  LogFeedRoute: LogFeedRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
