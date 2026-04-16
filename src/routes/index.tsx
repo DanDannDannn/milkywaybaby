@@ -157,25 +157,47 @@ function Home() {
     <div className="min-h-screen pb-12">
       <AppHeader />
       <main className="mx-auto max-w-md px-4 pt-4 space-y-5">
-        {/* Today's milk total — hero */}
-        <Card className="rounded-[2rem] p-6 border-0 shadow-md bg-gradient-to-br from-primary/25 to-secondary/60">
-          <div className="text-xs font-bold uppercase tracking-widest text-foreground/60">
-            Today's milk
-          </div>
-          <div className="mt-2 flex items-baseline gap-2">
-            {loading ? (
-              <div className="h-12 w-32 rounded-xl bg-foreground/10 animate-pulse" />
-            ) : (
-              <>
-                <div className="text-5xl font-extrabold text-foreground tracking-tight">
-                  {todayMl}
+        {/* Today's milk + last feed — combined long badge */}
+        <Card className="rounded-full px-5 py-4 border-0 shadow-md bg-gradient-to-r from-primary/25 to-secondary/60 flex items-center justify-between gap-4">
+          <div className="flex items-center gap-3 min-w-0">
+            <div className="w-11 h-11 rounded-full bg-card grid place-items-center shadow-sm shrink-0">
+              <Milk className="w-5 h-5 text-feeding-foreground" />
+            </div>
+            <div className="min-w-0">
+              <div className="text-[10px] font-bold uppercase tracking-widest text-foreground/60">
+                Today
+              </div>
+              {loading ? (
+                <div className="h-6 w-20 rounded-md bg-foreground/10 animate-pulse" />
+              ) : (
+                <div className="text-xl font-extrabold text-foreground leading-tight">
+                  {todayMl}ml
+                  <span className="ml-1 text-xs font-bold text-foreground/60">
+                    · {todayCount} feed{todayCount === 1 ? "" : "s"}
+                  </span>
                 </div>
-                <div className="text-xl font-bold text-foreground/70">ml</div>
-              </>
-            )}
+              )}
+            </div>
           </div>
-          <div className="mt-1 text-sm font-medium text-foreground/60">
-            {todayCount} feed{todayCount === 1 ? "" : "s"} so far
+          <div className="text-right shrink-0">
+            <div className="text-[10px] font-bold uppercase tracking-widest text-foreground/60">
+              Last feed
+            </div>
+            <div className="text-sm font-extrabold text-foreground leading-tight">
+              {loading ? (
+                <span className="inline-block h-4 w-14 rounded bg-foreground/10 animate-pulse" />
+              ) : lastFeed ? (
+                <>
+                  {timeAgo(lastFeed.occurred_at)}
+                  <div className="text-[11px] font-medium text-foreground/60">
+                    {Number(lastFeed.amount)}
+                    {lastFeed.unit}
+                  </div>
+                </>
+              ) : (
+                <span className="text-foreground/60 font-medium">—</span>
+              )}
+            </div>
           </div>
         </Card>
 
