@@ -125,10 +125,12 @@
   --border: oklch(1 0 0 / 10%);
   --input: oklch(1 0 0 / 12%);
   --ring: oklch(0.78 0.12 30);
-  --feeding: oklch(0.55 0.10 60);
-  --feeding-foreground: oklch(0.96 0.01 60);
+  --feeding: oklch(0.55 0.10 145);
+  --feeding-foreground: oklch(0.96 0.01 145);
   --diaper: oklch(0.50 0.08 230);
   --diaper-foreground: oklch(0.96 0.01 230);
+  --temperature: oklch(0.55 0.10 60);
+  --temperature-foreground: oklch(0.96 0.01 60);
   --mint: oklch(0.40 0.05 165);
   --peach: oklch(0.55 0.10 35);
   --cream: oklch(0.22 0.025 280);
