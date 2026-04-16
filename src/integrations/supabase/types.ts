@@ -14,16 +14,172 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      babies: {
+        Row: {
+          birth_date: string | null
+          created_at: string
+          created_by: string
+          id: string
+          invite_code: string
+          name: string
+          updated_at: string
+        }
+        Insert: {
+          birth_date?: string | null
+          created_at?: string
+          created_by: string
+          id?: string
+          invite_code: string
+          name: string
+          updated_at?: string
+        }
+        Update: {
+          birth_date?: string | null
+          created_at?: string
+          created_by?: string
+          id?: string
+          invite_code?: string
+          name?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      baby_members: {
+        Row: {
+          baby_id: string
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["baby_role"]
+          user_id: string
+        }
+        Insert: {
+          baby_id: string
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["baby_role"]
+          user_id: string
+        }
+        Update: {
+          baby_id?: string
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["baby_role"]
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "baby_members_baby_id_fkey"
+            columns: ["baby_id"]
+            isOneToOne: false
+            referencedRelation: "babies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      diapers: {
+        Row: {
+          baby_id: string
+          created_at: string
+          id: string
+          logged_by: string
+          note: string | null
+          occurred_at: string
+          type: Database["public"]["Enums"]["diaper_type"]
+          updated_at: string
+        }
+        Insert: {
+          baby_id: string
+          created_at?: string
+          id?: string
+          logged_by: string
+          note?: string | null
+          occurred_at?: string
+          type: Database["public"]["Enums"]["diaper_type"]
+          updated_at?: string
+        }
+        Update: {
+          baby_id?: string
+          created_at?: string
+          id?: string
+          logged_by?: string
+          note?: string | null
+          occurred_at?: string
+          type?: Database["public"]["Enums"]["diaper_type"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "diapers_baby_id_fkey"
+            columns: ["baby_id"]
+            isOneToOne: false
+            referencedRelation: "babies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      feedings: {
+        Row: {
+          amount: number
+          baby_id: string
+          created_at: string
+          id: string
+          logged_by: string
+          note: string | null
+          occurred_at: string
+          type: Database["public"]["Enums"]["feeding_type"]
+          unit: Database["public"]["Enums"]["feeding_unit"]
+          updated_at: string
+        }
+        Insert: {
+          amount: number
+          baby_id: string
+          created_at?: string
+          id?: string
+          logged_by: string
+          note?: string | null
+          occurred_at?: string
+          type?: Database["public"]["Enums"]["feeding_type"]
+          unit?: Database["public"]["Enums"]["feeding_unit"]
+          updated_at?: string
+        }
+        Update: {
+          amount?: number
+          baby_id?: string
+          created_at?: string
+          id?: string
+          logged_by?: string
+          note?: string | null
+          occurred_at?: string
+          type?: Database["public"]["Enums"]["feeding_type"]
+          unit?: Database["public"]["Enums"]["feeding_unit"]
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "feedings_baby_id_fkey"
+            columns: ["baby_id"]
+            isOneToOne: false
+            referencedRelation: "babies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      is_baby_member: {
+        Args: { _baby_id: string; _user_id: string }
+        Returns: boolean
+      }
+      join_baby_by_code: { Args: { _code: string }; Returns: string }
     }
     Enums: {
-      [_ in never]: never
+      baby_role: "owner" | "caregiver"
+      diaper_type: "wet" | "dirty" | "mixed"
+      feeding_type: "breast" | "formula"
+      feeding_unit: "ml" | "oz"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -150,6 +306,11 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      baby_role: ["owner", "caregiver"],
+      diaper_type: ["wet", "dirty", "mixed"],
+      feeding_type: ["breast", "formula"],
+      feeding_unit: ["ml", "oz"],
+    },
   },
 } as const
