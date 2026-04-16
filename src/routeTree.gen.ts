@@ -12,7 +12,6 @@ import { Route as rootRouteImport } from './routes/__root'
 import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as HistoryRouteImport } from './routes/history'
-import { Route as BabySettingsRouteImport } from './routes/baby-settings'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as LogTempRouteImport } from './routes/log.temp'
@@ -32,11 +31,6 @@ const OnboardingRoute = OnboardingRouteImport.update({
 const HistoryRoute = HistoryRouteImport.update({
   id: '/history',
   path: '/history',
-  getParentRoute: () => rootRouteImport,
-} as any)
-const BabySettingsRoute = BabySettingsRouteImport.update({
-  id: '/baby-settings',
-  path: '/baby-settings',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AuthRoute = AuthRouteImport.update({
@@ -68,7 +62,6 @@ const LogDiaperRoute = LogDiaperRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
-  '/baby-settings': typeof BabySettingsRoute
   '/history': typeof HistoryRoute
   '/onboarding': typeof OnboardingRoute
   '/settings': typeof SettingsRoute
@@ -79,7 +72,6 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
-  '/baby-settings': typeof BabySettingsRoute
   '/history': typeof HistoryRoute
   '/onboarding': typeof OnboardingRoute
   '/settings': typeof SettingsRoute
@@ -91,7 +83,6 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/auth': typeof AuthRoute
-  '/baby-settings': typeof BabySettingsRoute
   '/history': typeof HistoryRoute
   '/onboarding': typeof OnboardingRoute
   '/settings': typeof SettingsRoute
@@ -104,7 +95,6 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/auth'
-    | '/baby-settings'
     | '/history'
     | '/onboarding'
     | '/settings'
@@ -115,7 +105,6 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/auth'
-    | '/baby-settings'
     | '/history'
     | '/onboarding'
     | '/settings'
@@ -126,7 +115,6 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/auth'
-    | '/baby-settings'
     | '/history'
     | '/onboarding'
     | '/settings'
@@ -138,7 +126,6 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AuthRoute: typeof AuthRoute
-  BabySettingsRoute: typeof BabySettingsRoute
   HistoryRoute: typeof HistoryRoute
   OnboardingRoute: typeof OnboardingRoute
   SettingsRoute: typeof SettingsRoute
@@ -168,13 +155,6 @@ declare module '@tanstack/react-router' {
       path: '/history'
       fullPath: '/history'
       preLoaderRoute: typeof HistoryRouteImport
-      parentRoute: typeof rootRouteImport
-    }
-    '/baby-settings': {
-      id: '/baby-settings'
-      path: '/baby-settings'
-      fullPath: '/baby-settings'
-      preLoaderRoute: typeof BabySettingsRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/auth': {
@@ -218,7 +198,6 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AuthRoute: AuthRoute,
-  BabySettingsRoute: BabySettingsRoute,
   HistoryRoute: HistoryRoute,
   OnboardingRoute: OnboardingRoute,
   SettingsRoute: SettingsRoute,
