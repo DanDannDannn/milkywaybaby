@@ -641,6 +641,37 @@ function TrendsView({
                 {total === null || total === 0 ? "—" : total}
                 <span className="ml-1 text-sm font-bold text-muted-foreground">{meta.unit}</span>
               </div>
+              {(() => {
+                const cur = total;
+                const prev = prevTotal;
+                if (cur === null || prev === null || prev === 0 || cur === 0) {
+                  return (
+                    <div className="mt-0.5 text-[11px] font-bold text-muted-foreground">
+                      No data for previous {range === "week" ? "week" : "month"}
+                    </div>
+                  );
+                }
+                const diff = metric === "temp" ? +(cur - prev).toFixed(1) : cur - prev;
+                const pct = Math.round(((cur - prev) / Math.abs(prev)) * 100);
+                const up = diff > 0;
+                const flat = diff === 0;
+                const goodUp = metric !== "temp"; // more milk/sleep = good; for temp neutral
+                const tone = flat
+                  ? "text-muted-foreground"
+                  : metric === "temp"
+                    ? "text-foreground/70"
+                    : (up === goodUp ? "text-emerald-600" : "text-rose-600");
+                const arrow = flat ? "→" : up ? "▲" : "▼";
+                const diffLabel =
+                  metric === "temp"
+                    ? `${up ? "+" : ""}${diff}${meta.unit}`
+                    : `${up ? "+" : ""}${pct}%`;
+                return (
+                  <div className={`mt-0.5 text-[11px] font-bold ${tone}`}>
+                    {arrow} {diffLabel} vs last {range === "week" ? "week" : "month"}
+                  </div>
+                );
+              })()}
             </div>
           </div>
         </div>
