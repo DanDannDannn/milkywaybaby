@@ -164,6 +164,39 @@ export type Database = {
           },
         ]
       }
+      sleeps: {
+        Row: {
+          baby_id: string
+          created_at: string
+          ended_at: string
+          id: string
+          logged_by: string
+          note: string | null
+          started_at: string
+          updated_at: string
+        }
+        Insert: {
+          baby_id: string
+          created_at?: string
+          ended_at?: string
+          id?: string
+          logged_by: string
+          note?: string | null
+          started_at?: string
+          updated_at?: string
+        }
+        Update: {
+          baby_id?: string
+          created_at?: string
+          ended_at?: string
+          id?: string
+          logged_by?: string
+          note?: string | null
+          started_at?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
       temperatures: {
         Row: {
           baby_id: string
