@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { AppHeader } from "@/components/app-header";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Milk, Baby as BabyIcon, History, Loader2, Moon } from "lucide-react";
+import { Milk, Baby as BabyIcon, History, Loader2, Moon, Thermometer, Plus } from "lucide-react";
 import { timeAgo, startOfDay, endOfDay } from "@/lib/time";
 
 export const Route = createFileRoute("/")({
@@ -73,6 +73,7 @@ function Home() {
   const [todayMl, setTodayMl] = useState(0);
   const [todayCount, setTodayCount] = useState(0);
   const [todaySleepMs, setTodaySleepMs] = useState(0);
+  const [lastTemp, setLastTemp] = useState<{ value_c: number; occurred_at: string } | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -85,48 +86,64 @@ function Home() {
       const dayStartIso = dayStart.toISOString();
       const dayEndIso = dayEnd.toISOString();
 
-      const [{ data: f }, { data: d }, { data: s }, { data: todayFeeds }, { data: todaySleeps }] =
-        await Promise.all([
-          supabase
-            .from("feedings")
-            .select("occurred_at, amount, unit, type")
-            .eq("baby_id", activeBaby.id)
-            .order("occurred_at", { ascending: false })
-            .limit(1)
-            .maybeSingle(),
-          supabase
-            .from("diapers")
-            .select("occurred_at, type")
-            .eq("baby_id", activeBaby.id)
-            .order("occurred_at", { ascending: false })
-            .limit(1)
-            .maybeSingle(),
-          supabase
-            .from("sleeps")
-            .select("started_at, ended_at")
-            .eq("baby_id", activeBaby.id)
-            .order("ended_at", { ascending: false })
-            .limit(1)
-            .maybeSingle(),
-          supabase
-            .from("feedings")
-            .select("amount, unit")
-            .eq("baby_id", activeBaby.id)
-            .gte("occurred_at", dayStartIso)
-            .lte("occurred_at", dayEndIso),
-          supabase
-            .from("sleeps")
-            .select("started_at, ended_at")
-            .eq("baby_id", activeBaby.id)
-            .gte("ended_at", dayStartIso)
-            .lte("started_at", dayEndIso),
-        ]);
+      const [
+        { data: f },
+        { data: d },
+        { data: s },
+        { data: todayFeeds },
+        { data: todaySleeps },
+        { data: t },
+      ] = await Promise.all([
+        supabase
+          .from("feedings")
+          .select("occurred_at, amount, unit, type")
+          .eq("baby_id", activeBaby.id)
+          .order("occurred_at", { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+        supabase
+          .from("diapers")
+          .select("occurred_at, type")
+          .eq("baby_id", activeBaby.id)
+          .order("occurred_at", { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+        supabase
+          .from("sleeps")
+          .select("started_at, ended_at")
+          .eq("baby_id", activeBaby.id)
+          .order("ended_at", { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+        supabase
+          .from("feedings")
+          .select("amount, unit")
+          .eq("baby_id", activeBaby.id)
+          .gte("occurred_at", dayStartIso)
+          .lte("occurred_at", dayEndIso),
+        supabase
+          .from("sleeps")
+          .select("started_at, ended_at")
+          .eq("baby_id", activeBaby.id)
+          .gte("ended_at", dayStartIso)
+          .lte("started_at", dayEndIso),
+        supabase
+          .from("temperatures")
+          .select("value_c, occurred_at")
+          .eq("baby_id", activeBaby.id)
+          .gte("occurred_at", dayStartIso)
+          .lte("occurred_at", dayEndIso)
+          .order("occurred_at", { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+      ]);
 
       if (!active) return;
 
       setLastFeed(f as LastFeeding | null);
       setLastDiaper(d as LastDiaper | null);
       setLastSleep(s as SleepRow | null);
+      setLastTemp(t as { value_c: number; occurred_at: string } | null);
 
       let total = 0;
       const list = (todayFeeds ?? []) as { amount: number; unit: string }[];
@@ -208,6 +225,40 @@ function Home() {
               )}
               <div className="text-[11px] font-medium text-muted-foreground">today</div>
             </div>
+          </div>
+          <div className="mt-3 pt-3 border-t border-border flex items-center justify-between gap-3">
+            <div className="flex items-center gap-2 min-w-0">
+              <div className="w-8 h-8 rounded-full bg-temperature/30 grid place-items-center shrink-0">
+                <Thermometer className="w-4 h-4 text-temperature-foreground" />
+              </div>
+              <div className="min-w-0">
+                <div className="text-[10px] font-bold uppercase tracking-widest text-temperature-foreground">
+                  Temperature
+                </div>
+                {loading ? (
+                  <div className="mt-1 h-4 w-20 rounded-md bg-foreground/5 animate-pulse" />
+                ) : lastTemp ? (
+                  <div className="text-sm font-extrabold text-foreground leading-tight">
+                    {Number(lastTemp.value_c).toFixed(1)}°C
+                    <span className="ml-1 text-[11px] font-medium text-muted-foreground">
+                      · {timeAgo(lastTemp.occurred_at)}
+                    </span>
+                  </div>
+                ) : (
+                  <div className="text-sm font-medium text-muted-foreground">Not logged today</div>
+                )}
+              </div>
+            </div>
+            <Button
+              asChild
+              size="sm"
+              variant="outline"
+              className="rounded-full h-8 px-3 text-xs font-bold border-2 border-temperature/60 text-temperature-foreground hover:bg-temperature/20 shrink-0"
+            >
+              <Link to="/log/temp">
+                <Plus className="!w-3.5 !h-3.5" /> Log
+              </Link>
+            </Button>
           </div>
         </Card>
 
