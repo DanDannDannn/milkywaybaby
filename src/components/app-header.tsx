@@ -1,5 +1,4 @@
-import { Link, useRouter } from "@tanstack/react-router";
-import { useAuth } from "@/lib/auth-context";
+import { Link } from "@tanstack/react-router";
 import { useBaby } from "@/lib/baby-context";
 import {
   DropdownMenu,
@@ -9,11 +8,9 @@ import {
   DropdownMenuSeparator,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Settings, LogOut, Plus, ChevronDown } from "lucide-react";
+import { Settings, Plus, ChevronDown } from "lucide-react";
 
 export function AppHeader() {
-  const router = useRouter();
-  const { signOut } = useAuth();
   const { babies, activeBaby, setActiveBabyId } = useBaby();
 
   const initial = activeBaby?.name?.[0]?.toUpperCase() ?? "?";
@@ -52,27 +49,15 @@ export function AppHeader() {
           </DropdownMenuContent>
         </DropdownMenu>
 
-        <div className="flex items-center gap-1">
-          {activeBaby && (
-            <Link
-              to="/settings"
-              className="w-10 h-10 grid place-items-center rounded-full hover:bg-muted text-muted-foreground"
-              aria-label="Settings"
-            >
-              <Settings className="w-5 h-5" />
-            </Link>
-          )}
-          <button
-            onClick={async () => {
-              await signOut();
-              router.navigate({ to: "/auth" });
-            }}
+        {activeBaby && (
+          <Link
+            to="/settings"
             className="w-10 h-10 grid place-items-center rounded-full hover:bg-muted text-muted-foreground"
-            aria-label="Sign out"
+            aria-label="Settings"
           >
-            <LogOut className="w-5 h-5" />
-          </button>
-        </div>
+            <Settings className="w-5 h-5" />
+          </Link>
+        )}
       </div>
     </header>
   );
