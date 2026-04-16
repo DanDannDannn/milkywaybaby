@@ -519,6 +519,49 @@ function TrendsView({
           return { iso: k, label, value };
         });
       setData(points);
+
+      // Previous period total for comparison
+      let prev: number | null = null;
+      if (metric === "milk") {
+        const { data: pf } = await supabase
+          .from("feedings")
+          .select("amount, unit")
+          .eq("baby_id", babyId)
+          .gte("occurred_at", prevFromIso)
+          .lte("occurred_at", prevToIso);
+        let sum = 0;
+        for (const f of (pf ?? []) as { amount: number; unit: string }[]) {
+          sum += f.unit === "oz" ? Number(f.amount) * 29.5735 : Number(f.amount);
+        }
+        prev = Math.round(sum);
+      } else if (metric === "sleep") {
+        const { data: ps } = await supabase
+          .from("sleeps")
+          .select("started_at, ended_at")
+          .eq("baby_id", babyId)
+          .gte("ended_at", prevFromIso)
+          .lte("started_at", prevToIso);
+        let ms = 0;
+        const winStart = prevFrom.getTime();
+        const winEnd = endOfDay(prevTo).getTime();
+        for (const s of (ps ?? []) as { started_at: string; ended_at: string }[]) {
+          const a = Math.max(new Date(s.started_at).getTime(), winStart);
+          const b = Math.min(new Date(s.ended_at).getTime(), winEnd);
+          if (b > a) ms += b - a;
+        }
+        prev = +(ms / 3_600_000).toFixed(2);
+      } else {
+        const { data: pt } = await supabase
+          .from("temperatures")
+          .select("value_c")
+          .eq("baby_id", babyId)
+          .gte("occurred_at", prevFromIso)
+          .lte("occurred_at", prevToIso);
+        const vs = ((pt ?? []) as { value_c: number }[]).map((t) => Number(t.value_c));
+        prev = vs.length ? +(vs.reduce((a, n) => a + n, 0) / vs.length).toFixed(1) : null;
+      }
+      if (!active) return;
+      setPrevTotal(prev);
       setLoading(false);
     })();
     return () => {
