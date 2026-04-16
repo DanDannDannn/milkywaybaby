@@ -216,28 +216,7 @@ function Home() {
         </Card>
 
         {/* Status cards */}
-        <div className="grid grid-cols-2 gap-3">
-          <Card className="rounded-3xl p-4 border-0 bg-feeding/40 shadow-sm">
-            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-feeding-foreground/80">
-              <Milk className="w-4 h-4" /> Last feed
-            </div>
-            {loading ? (
-              <div className="mt-3 h-10 rounded-md bg-foreground/5 animate-pulse" />
-            ) : lastFeed ? (
-              <>
-                <div className="mt-2 text-lg font-extrabold text-foreground">
-                  {timeAgo(lastFeed.occurred_at)}
-                </div>
-                <div className="text-xs font-medium text-foreground/70 capitalize">
-                  {Number(lastFeed.amount)}
-                  {lastFeed.unit} · {lastFeed.type === "breast" ? "breast milk" : "formula"}
-                </div>
-              </>
-            ) : (
-              <div className="mt-2 text-sm text-foreground/60">No feeds yet</div>
-            )}
-          </Card>
-
+        <div className="grid grid-cols-1 gap-3">
           <Card className="rounded-3xl p-4 border-0 bg-diaper/40 shadow-sm">
             <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-diaper-foreground/80">
               <BabyIcon className="w-4 h-4" /> Last diaper
@@ -259,7 +238,7 @@ function Home() {
           </Card>
 
           {lastSleep && (
-            <Card className="rounded-3xl p-4 border-0 bg-sleep/30 shadow-sm col-span-2">
+            <Card className="rounded-3xl p-4 border-0 bg-sleep/30 shadow-sm">
               <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-sleep-foreground/80">
                 <Moon className="w-4 h-4" /> Last sleep
               </div>
