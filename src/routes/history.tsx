@@ -414,6 +414,7 @@ function TrendsView({
   const [range, setRange] = useState<Range>("week");
   const [metric, setMetric] = useState<Metric>("milk");
   const [data, setData] = useState<TrendPoint[]>([]);
+  const [prevTotal, setPrevTotal] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
 
   const days = range === "week" ? 7 : 30;
@@ -424,8 +425,12 @@ function TrendsView({
       setLoading(true);
       const today = startOfDay(new Date());
       const from = addDays(today, -(days - 1));
+      const prevFrom = addDays(from, -days);
+      const prevTo = addDays(from, -1);
       const fromIso = from.toISOString();
       const toIso = endOfDay(today).toISOString();
+      const prevFromIso = prevFrom.toISOString();
+      const prevToIso = endOfDay(prevTo).toISOString();
 
       // Build empty buckets
       const buckets: Record<string, { milk: number; sleepMs: number; temps: number[] }> = {};
@@ -514,6 +519,49 @@ function TrendsView({
           return { iso: k, label, value };
         });
       setData(points);
+
+      // Previous period total for comparison
+      let prev: number | null = null;
+      if (metric === "milk") {
+        const { data: pf } = await supabase
+          .from("feedings")
+          .select("amount, unit")
+          .eq("baby_id", babyId)
+          .gte("occurred_at", prevFromIso)
+          .lte("occurred_at", prevToIso);
+        let sum = 0;
+        for (const f of (pf ?? []) as { amount: number; unit: string }[]) {
+          sum += f.unit === "oz" ? Number(f.amount) * 29.5735 : Number(f.amount);
+        }
+        prev = Math.round(sum);
+      } else if (metric === "sleep") {
+        const { data: ps } = await supabase
+          .from("sleeps")
+          .select("started_at, ended_at")
+          .eq("baby_id", babyId)
+          .gte("ended_at", prevFromIso)
+          .lte("started_at", prevToIso);
+        let ms = 0;
+        const winStart = prevFrom.getTime();
+        const winEnd = endOfDay(prevTo).getTime();
+        for (const s of (ps ?? []) as { started_at: string; ended_at: string }[]) {
+          const a = Math.max(new Date(s.started_at).getTime(), winStart);
+          const b = Math.min(new Date(s.ended_at).getTime(), winEnd);
+          if (b > a) ms += b - a;
+        }
+        prev = +(ms / 3_600_000).toFixed(2);
+      } else {
+        const { data: pt } = await supabase
+          .from("temperatures")
+          .select("value_c")
+          .eq("baby_id", babyId)
+          .gte("occurred_at", prevFromIso)
+          .lte("occurred_at", prevToIso);
+        const vs = ((pt ?? []) as { value_c: number }[]).map((t) => Number(t.value_c));
+        prev = vs.length ? +(vs.reduce((a, n) => a + n, 0) / vs.length).toFixed(1) : null;
+      }
+      if (!active) return;
+      setPrevTotal(prev);
       setLoading(false);
     })();
     return () => {
@@ -593,6 +641,37 @@ function TrendsView({
                 {total === null || total === 0 ? "—" : total}
                 <span className="ml-1 text-sm font-bold text-muted-foreground">{meta.unit}</span>
               </div>
+              {(() => {
+                const cur = total;
+                const prev = prevTotal;
+                if (cur === null || prev === null || prev === 0 || cur === 0) {
+                  return (
+                    <div className="mt-0.5 text-[11px] font-bold text-muted-foreground">
+                      No data for previous {range === "week" ? "week" : "month"}
+                    </div>
+                  );
+                }
+                const diff = metric === "temp" ? +(cur - prev).toFixed(1) : cur - prev;
+                const pct = Math.round(((cur - prev) / Math.abs(prev)) * 100);
+                const up = diff > 0;
+                const flat = diff === 0;
+                const goodUp = metric !== "temp"; // more milk/sleep = good; for temp neutral
+                const tone = flat
+                  ? "text-muted-foreground"
+                  : metric === "temp"
+                    ? "text-foreground/70"
+                    : (up === goodUp ? "text-emerald-600" : "text-rose-600");
+                const arrow = flat ? "→" : up ? "▲" : "▼";
+                const diffLabel =
+                  metric === "temp"
+                    ? `${up ? "+" : ""}${diff}${meta.unit}`
+                    : `${up ? "+" : ""}${pct}%`;
+                return (
+                  <div className={`mt-0.5 text-[11px] font-bold ${tone}`}>
+                    {arrow} {diffLabel} vs last {range === "week" ? "week" : "month"}
+                  </div>
+                );
+              })()}
             </div>
           </div>
         </div>
