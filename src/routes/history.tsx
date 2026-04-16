@@ -414,6 +414,7 @@ function TrendsView({
   const [range, setRange] = useState<Range>("week");
   const [metric, setMetric] = useState<Metric>("milk");
   const [data, setData] = useState<TrendPoint[]>([]);
+  const [prevTotal, setPrevTotal] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
 
   const days = range === "week" ? 7 : 30;
@@ -424,8 +425,12 @@ function TrendsView({
       setLoading(true);
       const today = startOfDay(new Date());
       const from = addDays(today, -(days - 1));
+      const prevFrom = addDays(from, -days);
+      const prevTo = addDays(from, -1);
       const fromIso = from.toISOString();
       const toIso = endOfDay(today).toISOString();
+      const prevFromIso = prevFrom.toISOString();
+      const prevToIso = endOfDay(prevTo).toISOString();
 
       // Build empty buckets
       const buckets: Record<string, { milk: number; sleepMs: number; temps: number[] }> = {};
