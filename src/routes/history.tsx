@@ -47,18 +47,21 @@ interface FeedingRow {
   unit: string;
   type: string;
   note: string | null;
+  logged_by: string;
 }
 interface DiaperRow {
   id: string;
   occurred_at: string;
   type: string;
   note: string | null;
+  logged_by: string;
 }
 interface TempRow {
   id: string;
   occurred_at: string;
   value_c: number;
   note: string | null;
+  logged_by: string;
 }
 type Entry =
   | { kind: "feed"; data: FeedingRow }
@@ -72,6 +75,7 @@ function HistoryPage() {
   const [weekStart, setWeekStart] = useState(() => startOfWeek(new Date()));
   const [selectedDay, setSelectedDay] = useState(() => startOfDay(new Date()));
   const [entries, setEntries] = useState<Entry[]>([]);
+  const [profiles, setProfiles] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [pendingDelete, setPendingDelete] = useState<Entry | null>(null);
 
@@ -90,21 +94,21 @@ function HistoryPage() {
       const [{ data: feeds }, { data: diapers }, { data: temps }] = await Promise.all([
         supabase
           .from("feedings")
-          .select("id, occurred_at, amount, unit, type, note")
+          .select("id, occurred_at, amount, unit, type, note, logged_by")
           .eq("baby_id", activeBaby.id)
           .gte("occurred_at", start)
           .lte("occurred_at", end)
           .order("occurred_at", { ascending: false }),
         supabase
           .from("diapers")
-          .select("id, occurred_at, type, note")
+          .select("id, occurred_at, type, note, logged_by")
           .eq("baby_id", activeBaby.id)
           .gte("occurred_at", start)
           .lte("occurred_at", end)
           .order("occurred_at", { ascending: false }),
         supabase
           .from("temperatures")
-          .select("id, occurred_at, value_c, note")
+          .select("id, occurred_at, value_c, note, logged_by")
           .eq("baby_id", activeBaby.id)
           .gte("occurred_at", start)
           .lte("occurred_at", end)
@@ -120,6 +124,19 @@ function HistoryPage() {
           new Date(b.data.occurred_at).getTime() - new Date(a.data.occurred_at).getTime(),
       );
       setEntries(merged);
+
+      const userIds = Array.from(new Set(merged.map((e) => e.data.logged_by)));
+      if (userIds.length > 0) {
+        const { data: profs } = await supabase
+          .from("profiles")
+          .select("user_id, display_name, email")
+          .in("user_id", userIds);
+        const map: Record<string, string> = {};
+        for (const p of (profs ?? []) as { user_id: string; display_name: string | null; email: string | null }[]) {
+          map[p.user_id] = p.display_name || p.email || "Unknown";
+        }
+        setProfiles(map);
+      }
       setLoading(false);
     })();
     return () => {
@@ -292,6 +309,8 @@ function HistoryPage() {
                   </div>
                   <div className="text-xs font-medium text-foreground/60">
                     {fmtTime(e.data.occurred_at)}
+                    {" · by "}
+                    {profiles[e.data.logged_by] ?? "…"}
                     {e.data.note ? ` · ${e.data.note}` : ""}
                   </div>
                 </div>
