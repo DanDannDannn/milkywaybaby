@@ -8,7 +8,6 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Milk, Baby as BabyIcon, History, Loader2, Moon } from "lucide-react";
 import { timeAgo, startOfDay, endOfDay } from "@/lib/time";
-import babyHero from "@/assets/baby-hero.png";
 
 export const Route = createFileRoute("/")({
   component: HomePage,
@@ -157,97 +156,60 @@ function Home() {
   return (
     <div className="min-h-screen pb-12">
       <AppHeader />
-      <main className="mx-auto max-w-md px-4 pt-2 space-y-5">
-        {/* Hero illustration + today's summary */}
-        <section className="pt-2">
-          <div className="flex justify-center">
-            <img
-              src={babyHero}
-              alt=""
-              width={160}
-              height={160}
-              className="w-40 h-40 object-contain select-none pointer-events-none"
-            />
-          </div>
-
-          <div className="mt-2 grid grid-cols-2 gap-x-6 gap-y-1 text-center">
-            <div>
-              <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                Today's milk
+      <main className="mx-auto max-w-md px-4 pt-4 space-y-5">
+        {/* Today's summary — bordered, color-coded to match actions */}
+        <Card className="rounded-3xl p-4 border-2 border-border bg-card shadow-none">
+          <div className="grid grid-cols-3 divide-x divide-border">
+            <div className="px-2 text-center">
+              <div className="flex items-center justify-center gap-1 text-[10px] font-bold uppercase tracking-widest text-primary">
+                <Milk className="w-3.5 h-3.5" /> Milk
               </div>
               {loading ? (
-                <div className="mx-auto mt-1 h-7 w-20 rounded-md bg-foreground/5 animate-pulse" />
+                <div className="mx-auto mt-1.5 h-7 w-16 rounded-md bg-foreground/5 animate-pulse" />
               ) : (
-                <div className="text-2xl font-extrabold text-foreground leading-tight">
+                <div className="mt-1 text-2xl font-extrabold text-primary leading-tight">
                   {todayMl}
-                  <span className="ml-0.5 text-sm font-bold text-muted-foreground">ml</span>
+                  <span className="ml-0.5 text-xs font-bold text-primary/70">ml</span>
                 </div>
               )}
               <div className="text-[11px] font-medium text-muted-foreground">
                 {todayCount} feed{todayCount === 1 ? "" : "s"}
               </div>
             </div>
-            <div>
-              <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                Today's sleep
+            <div className="px-2 text-center">
+              <div className="flex items-center justify-center gap-1 text-[10px] font-bold uppercase tracking-widest text-diaper-foreground">
+                <BabyIcon className="w-3.5 h-3.5" /> Diaper
               </div>
               {loading ? (
-                <div className="mx-auto mt-1 h-7 w-20 rounded-md bg-foreground/5 animate-pulse" />
+                <div className="mx-auto mt-1.5 h-7 w-16 rounded-md bg-foreground/5 animate-pulse" />
+              ) : lastDiaper ? (
+                <>
+                  <div className="mt-1 text-2xl font-extrabold text-diaper-foreground leading-tight capitalize">
+                    {lastDiaper.type}
+                  </div>
+                  <div className="text-[11px] font-medium text-muted-foreground">
+                    {timeAgo(lastDiaper.occurred_at)}
+                  </div>
+                </>
               ) : (
-                <div className="text-2xl font-extrabold text-foreground leading-tight">
+                <div className="mt-1 text-sm font-medium text-muted-foreground">—</div>
+              )}
+            </div>
+            <div className="px-2 text-center">
+              <div className="flex items-center justify-center gap-1 text-[10px] font-bold uppercase tracking-widest text-sleep-foreground">
+                <Moon className="w-3.5 h-3.5" /> Sleep
+              </div>
+              {loading ? (
+                <div className="mx-auto mt-1.5 h-7 w-16 rounded-md bg-foreground/5 animate-pulse" />
+              ) : (
+                <div className="mt-1 text-2xl font-extrabold text-sleep-foreground leading-tight">
                   {formatDuration(todaySleepMs)}
                 </div>
               )}
-              <div className="text-[11px] font-medium text-muted-foreground">
-                {lastFeed ? `last feed ${timeAgo(lastFeed.occurred_at)}` : "no feeds yet"}
-              </div>
+              <div className="text-[11px] font-medium text-muted-foreground">today</div>
             </div>
           </div>
-        </section>
-
-        <div className="h-px bg-border/60" />
-
-        {/* Status cards */}
-        <div className="grid grid-cols-1 gap-3">
-          <Card className="rounded-3xl p-4 border-0 bg-diaper/40 shadow-sm">
-            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-diaper-foreground/80">
-              <BabyIcon className="w-4 h-4" /> Last diaper
-            </div>
-            {loading ? (
-              <div className="mt-3 h-10 rounded-md bg-foreground/5 animate-pulse" />
-            ) : lastDiaper ? (
-              <>
-                <div className="mt-2 text-lg font-extrabold text-foreground">
-                  {timeAgo(lastDiaper.occurred_at)}
-                </div>
-                <div className="text-xs font-medium text-foreground/70 capitalize">
-                  {lastDiaper.type}
-                </div>
-              </>
-            ) : (
-              <div className="mt-2 text-sm text-foreground/60">No changes yet</div>
-            )}
-          </Card>
-
-          {lastSleep && (
-            <Card className="rounded-3xl p-4 border-0 bg-sleep/30 shadow-sm">
-              <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-sleep-foreground/80">
-                <Moon className="w-4 h-4" /> Last sleep
-              </div>
-              <div className="mt-2 flex items-baseline gap-3">
-                <span className="text-2xl font-extrabold text-foreground">
-                  {formatDuration(
-                    new Date(lastSleep.ended_at).getTime() -
-                      new Date(lastSleep.started_at).getTime()
-                  )}
-                </span>
-                <span className="text-sm font-medium text-foreground/60">
-                  ended {timeAgo(lastSleep.ended_at)}
-                </span>
-              </div>
-            </Card>
-          )}
-        </div>
+        </Card>
 
         {/* CTAs */}
         <div className="grid grid-cols-1 gap-3 pt-1">
