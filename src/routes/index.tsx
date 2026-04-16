@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Milk, Baby as BabyIcon, History, Loader2, Moon } from "lucide-react";
 import { timeAgo, startOfDay, endOfDay } from "@/lib/time";
+import babyHero from "@/assets/baby-hero.png";
 
 export const Route = createFileRoute("/")({
   component: HomePage,
@@ -156,64 +157,55 @@ function Home() {
   return (
     <div className="min-h-screen pb-12">
       <AppHeader />
-      <main className="mx-auto max-w-md px-4 pt-4 space-y-5">
-        {/* Today's milk + last feed — combined long badge */}
-        <Card className="rounded-full px-5 py-4 border-0 shadow-md bg-gradient-to-r from-primary/25 to-secondary/60 flex items-center justify-between gap-4">
-          <div className="flex items-center gap-3 min-w-0">
-            <div className="w-11 h-11 rounded-full bg-card grid place-items-center shadow-sm shrink-0">
-              <Milk className="w-5 h-5 text-feeding-foreground" />
-            </div>
-            <div className="min-w-0">
-              <div className="text-[10px] font-bold uppercase tracking-widest text-foreground/60">
-                Today
+      <main className="mx-auto max-w-md px-4 pt-2 space-y-5">
+        {/* Hero illustration + today's summary */}
+        <section className="pt-2">
+          <div className="flex justify-center">
+            <img
+              src={babyHero}
+              alt=""
+              width={160}
+              height={160}
+              className="w-40 h-40 object-contain select-none pointer-events-none"
+            />
+          </div>
+
+          <div className="mt-2 grid grid-cols-2 gap-x-6 gap-y-1 text-center">
+            <div>
+              <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                Today's milk
               </div>
               {loading ? (
-                <div className="h-6 w-20 rounded-md bg-foreground/10 animate-pulse" />
+                <div className="mx-auto mt-1 h-7 w-20 rounded-md bg-foreground/5 animate-pulse" />
               ) : (
-                <div className="text-xl font-extrabold text-foreground leading-tight">
-                  {todayMl}ml
-                  <span className="ml-1 text-xs font-bold text-foreground/60">
-                    · {todayCount} feed{todayCount === 1 ? "" : "s"}
-                  </span>
+                <div className="text-2xl font-extrabold text-foreground leading-tight">
+                  {todayMl}
+                  <span className="ml-0.5 text-sm font-bold text-muted-foreground">ml</span>
                 </div>
               )}
+              <div className="text-[11px] font-medium text-muted-foreground">
+                {todayCount} feed{todayCount === 1 ? "" : "s"}
+              </div>
             </div>
-          </div>
-          <div className="text-right shrink-0">
-            <div className="text-[10px] font-bold uppercase tracking-widest text-foreground/60">
-              Last feed
-            </div>
-            <div className="text-sm font-extrabold text-foreground leading-tight">
+            <div>
+              <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
+                Today's sleep
+              </div>
               {loading ? (
-                <span className="inline-block h-4 w-14 rounded bg-foreground/10 animate-pulse" />
-              ) : lastFeed ? (
-                <>
-                  {timeAgo(lastFeed.occurred_at)}
-                  <div className="text-[11px] font-medium text-foreground/60">
-                    {Number(lastFeed.amount)}
-                    {lastFeed.unit}
-                  </div>
-                </>
+                <div className="mx-auto mt-1 h-7 w-20 rounded-md bg-foreground/5 animate-pulse" />
               ) : (
-                <span className="text-foreground/60 font-medium">—</span>
+                <div className="text-2xl font-extrabold text-foreground leading-tight">
+                  {formatDuration(todaySleepMs)}
+                </div>
               )}
+              <div className="text-[11px] font-medium text-muted-foreground">
+                {lastFeed ? `last feed ${timeAgo(lastFeed.occurred_at)}` : "no feeds yet"}
+              </div>
             </div>
           </div>
-        </Card>
+        </section>
 
-        {/* Today's sleep total */}
-        <Card className="rounded-[2rem] p-5 border-0 shadow-sm bg-sleep/40">
-          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-sleep-foreground/80">
-            <Moon className="w-4 h-4" /> Today's sleep
-          </div>
-          <div className="mt-1 text-4xl font-extrabold text-foreground">
-            {loading ? (
-              <div className="h-9 w-28 rounded-xl bg-foreground/10 animate-pulse" />
-            ) : (
-              formatDuration(todaySleepMs)
-            )}
-          </div>
-        </Card>
+        <div className="h-px bg-border/60" />
 
         {/* Status cards */}
         <div className="grid grid-cols-1 gap-3">
