@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { AppHeader } from "@/components/app-header";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Milk, Baby as BabyIcon, History, Loader2, Moon } from "lucide-react";
+import { Milk, Baby as BabyIcon, History, Loader2, Moon, Thermometer, Plus } from "lucide-react";
 import { timeAgo, startOfDay, endOfDay } from "@/lib/time";
 
 export const Route = createFileRoute("/")({
@@ -85,42 +85,57 @@ function Home() {
       const dayStartIso = dayStart.toISOString();
       const dayEndIso = dayEnd.toISOString();
 
-      const [{ data: f }, { data: d }, { data: s }, { data: todayFeeds }, { data: todaySleeps }] =
-        await Promise.all([
-          supabase
-            .from("feedings")
-            .select("occurred_at, amount, unit, type")
-            .eq("baby_id", activeBaby.id)
-            .order("occurred_at", { ascending: false })
-            .limit(1)
-            .maybeSingle(),
-          supabase
-            .from("diapers")
-            .select("occurred_at, type")
-            .eq("baby_id", activeBaby.id)
-            .order("occurred_at", { ascending: false })
-            .limit(1)
-            .maybeSingle(),
-          supabase
-            .from("sleeps")
-            .select("started_at, ended_at")
-            .eq("baby_id", activeBaby.id)
-            .order("ended_at", { ascending: false })
-            .limit(1)
-            .maybeSingle(),
-          supabase
-            .from("feedings")
-            .select("amount, unit")
-            .eq("baby_id", activeBaby.id)
-            .gte("occurred_at", dayStartIso)
-            .lte("occurred_at", dayEndIso),
-          supabase
-            .from("sleeps")
-            .select("started_at, ended_at")
-            .eq("baby_id", activeBaby.id)
-            .gte("ended_at", dayStartIso)
-            .lte("started_at", dayEndIso),
-        ]);
+      const [
+        { data: f },
+        { data: d },
+        { data: s },
+        { data: todayFeeds },
+        { data: todaySleeps },
+        { data: t },
+      ] = await Promise.all([
+        supabase
+          .from("feedings")
+          .select("occurred_at, amount, unit, type")
+          .eq("baby_id", activeBaby.id)
+          .order("occurred_at", { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+        supabase
+          .from("diapers")
+          .select("occurred_at, type")
+          .eq("baby_id", activeBaby.id)
+          .order("occurred_at", { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+        supabase
+          .from("sleeps")
+          .select("started_at, ended_at")
+          .eq("baby_id", activeBaby.id)
+          .order("ended_at", { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+        supabase
+          .from("feedings")
+          .select("amount, unit")
+          .eq("baby_id", activeBaby.id)
+          .gte("occurred_at", dayStartIso)
+          .lte("occurred_at", dayEndIso),
+        supabase
+          .from("sleeps")
+          .select("started_at, ended_at")
+          .eq("baby_id", activeBaby.id)
+          .gte("ended_at", dayStartIso)
+          .lte("started_at", dayEndIso),
+        supabase
+          .from("temperatures")
+          .select("value_c, occurred_at")
+          .eq("baby_id", activeBaby.id)
+          .gte("occurred_at", dayStartIso)
+          .lte("occurred_at", dayEndIso)
+          .order("occurred_at", { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+      ]);
 
       if (!active) return;
 
