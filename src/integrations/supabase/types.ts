@@ -164,6 +164,47 @@ export type Database = {
           },
         ]
       }
+      temperatures: {
+        Row: {
+          baby_id: string
+          created_at: string
+          id: string
+          logged_by: string
+          note: string | null
+          occurred_at: string
+          updated_at: string
+          value_c: number
+        }
+        Insert: {
+          baby_id: string
+          created_at?: string
+          id?: string
+          logged_by: string
+          note?: string | null
+          occurred_at?: string
+          updated_at?: string
+          value_c: number
+        }
+        Update: {
+          baby_id?: string
+          created_at?: string
+          id?: string
+          logged_by?: string
+          note?: string | null
+          occurred_at?: string
+          updated_at?: string
+          value_c?: number
+        }
+        Relationships: [
+          {
+            foreignKeyName: "temperatures_baby_id_fkey"
+            columns: ["baby_id"]
+            isOneToOne: false
+            referencedRelation: "babies"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
     }
     Views: {
       [_ in never]: never
