@@ -36,6 +36,8 @@
   --color-feeding-foreground: var(--feeding-foreground);
   --color-diaper: var(--diaper);
   --color-diaper-foreground: var(--diaper-foreground);
+  --color-temperature: var(--temperature);
+  --color-temperature-foreground: var(--temperature-foreground);
   --color-mint: var(--mint);
   --color-peach: var(--peach);
   --color-cream: var(--cream);
@@ -55,50 +57,52 @@
 }
 
 :root {
-  --radius: 1.25rem;
-  /* Soft pastel & friendly palette */
-  --background: oklch(0.985 0.012 85);            /* warm cream */
-  --foreground: oklch(0.32 0.04 280);             /* soft deep indigo */
+  --radius: 1.5rem;
+  /* Calm modern palette — spring green */
+  --background: oklch(0.985 0.01 145);            /* very pale green-white */
+  --foreground: oklch(0.24 0.03 160);             /* deep forest */
   --card: oklch(1 0 0);
-  --card-foreground: oklch(0.32 0.04 280);
+  --card-foreground: oklch(0.24 0.03 160);
   --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.32 0.04 280);
-  --primary: oklch(0.78 0.12 30);                 /* peach */
-  --primary-foreground: oklch(0.25 0.05 30);
-  --secondary: oklch(0.92 0.06 165);              /* mint */
-  --secondary-foreground: oklch(0.30 0.06 165);
-  --muted: oklch(0.96 0.015 80);
-  --muted-foreground: oklch(0.52 0.03 280);
-  --accent: oklch(0.88 0.07 240);                 /* soft blue */
-  --accent-foreground: oklch(0.28 0.06 250);
-  --destructive: oklch(0.65 0.18 25);
+  --popover-foreground: oklch(0.24 0.03 160);
+  --primary: oklch(0.74 0.16 145);                /* spring green */
+  --primary-foreground: oklch(0.18 0.04 160);
+  --secondary: oklch(0.93 0.05 145);              /* mint wash */
+  --secondary-foreground: oklch(0.28 0.05 160);
+  --muted: oklch(0.96 0.012 145);
+  --muted-foreground: oklch(0.48 0.02 160);
+  --accent: oklch(0.88 0.08 150);
+  --accent-foreground: oklch(0.24 0.05 160);
+  --destructive: oklch(0.62 0.18 25);
   --destructive-foreground: oklch(0.99 0 0);
-  --border: oklch(0.92 0.02 80);
-  --input: oklch(0.94 0.018 80);
-  --ring: oklch(0.78 0.12 30);
+  --border: oklch(0.92 0.015 145);
+  --input: oklch(0.94 0.012 145);
+  --ring: oklch(0.74 0.16 145);
 
-  --feeding: oklch(0.85 0.10 60);                 /* warm amber */
-  --feeding-foreground: oklch(0.30 0.06 60);
-  --diaper: oklch(0.86 0.08 200);                 /* sky */
+  --feeding: oklch(0.86 0.10 145);                /* fresh green */
+  --feeding-foreground: oklch(0.26 0.06 160);
+  --diaper: oklch(0.88 0.06 200);                 /* soft sky */
   --diaper-foreground: oklch(0.28 0.07 230);
-  --mint: oklch(0.92 0.06 165);
-  --peach: oklch(0.85 0.10 35);
-  --cream: oklch(0.985 0.012 85);
+  --temperature: oklch(0.85 0.10 60);             /* warm amber */
+  --temperature-foreground: oklch(0.30 0.06 60);
+  --mint: oklch(0.93 0.05 145);
+  --peach: oklch(0.88 0.06 60);
+  --cream: oklch(0.985 0.01 145);
 
-  --chart-1: oklch(0.78 0.12 30);
-  --chart-2: oklch(0.78 0.10 165);
-  --chart-3: oklch(0.78 0.10 240);
-  --chart-4: oklch(0.82 0.12 60);
+  --chart-1: oklch(0.74 0.16 145);
+  --chart-2: oklch(0.78 0.10 200);
+  --chart-3: oklch(0.82 0.12 60);
+  --chart-4: oklch(0.70 0.14 175);
   --chart-5: oklch(0.78 0.10 320);
 
-  --sidebar: oklch(0.985 0.012 85);
-  --sidebar-foreground: oklch(0.32 0.04 280);
-  --sidebar-primary: oklch(0.78 0.12 30);
-  --sidebar-primary-foreground: oklch(0.25 0.05 30);
-  --sidebar-accent: oklch(0.92 0.06 165);
-  --sidebar-accent-foreground: oklch(0.30 0.06 165);
-  --sidebar-border: oklch(0.92 0.02 80);
-  --sidebar-ring: oklch(0.78 0.12 30);
+  --sidebar: oklch(0.985 0.01 145);
+  --sidebar-foreground: oklch(0.24 0.03 160);
+  --sidebar-primary: oklch(0.74 0.16 145);
+  --sidebar-primary-foreground: oklch(0.18 0.04 160);
+  --sidebar-accent: oklch(0.93 0.05 145);
+  --sidebar-accent-foreground: oklch(0.28 0.05 160);
+  --sidebar-border: oklch(0.92 0.015 145);
+  --sidebar-ring: oklch(0.74 0.16 145);
 }
 
 .dark {
@@ -148,9 +152,18 @@
     border-color: var(--color-border);
   }
 
+  html {
+    font-family:
+      "Nunito", "SF Pro Rounded", ui-rounded, system-ui, -apple-system, "Segoe UI",
+      Roboto, sans-serif;
+    font-size: 17px;
+  }
+
   body {
     background-color: var(--color-background);
     color: var(--color-foreground);
     -webkit-font-smoothing: antialiased;
+    font-feature-settings: "ss01", "cv11";
+    letter-spacing: -0.005em;
   }
 }
