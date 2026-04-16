@@ -1,0 +1,136 @@
+import { createFileRoute, useNavigate, Link } from "@tanstack/react-router";
+import { useEffect, useState, type FormEvent } from "react";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/auth-context";
+import { useBaby } from "@/lib/baby-context";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
+import { Card } from "@/components/ui/card";
+import { ChevronLeft, Baby as BabyIcon } from "lucide-react";
+import { toLocalInput, fromLocalInput } from "@/lib/time";
+import { toast } from "sonner";
+
+export const Route = createFileRoute("/log/diaper")({
+  head: () => ({ meta: [{ title: "Log diaper — Little Logs" }] }),
+  component: LogDiaper,
+});
+
+function LogDiaper() {
+  const navigate = useNavigate();
+  const { user } = useAuth();
+  const { activeBaby } = useBaby();
+
+  const [time, setTime] = useState(toLocalInput(new Date()));
+  const [type, setType] = useState<"wet" | "dirty" | "mixed">("wet");
+  const [note, setNote] = useState("");
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    if (!user) navigate({ to: "/auth" });
+    else if (!activeBaby) navigate({ to: "/onboarding" });
+  }, [user, activeBaby, navigate]);
+
+  const submit = async (e: FormEvent) => {
+    e.preventDefault();
+    if (!user || !activeBaby) return;
+    setLoading(true);
+    const { error } = await supabase.from("diapers").insert({
+      baby_id: activeBaby.id,
+      occurred_at: fromLocalInput(time).toISOString(),
+      type,
+      note: note.trim() || null,
+      logged_by: user.id,
+    });
+    setLoading(false);
+    if (error) {
+      toast.error(error.message);
+      return;
+    }
+    toast.success("Diaper logged");
+    navigate({ to: "/" });
+  };
+
+  return (
+    <div className="min-h-screen pb-10 bg-background">
+      <header className="sticky top-0 z-30 backdrop-blur bg-background/80 border-b border-border/40">
+        <div className="mx-auto max-w-md px-2 h-14 flex items-center gap-2">
+          <Link
+            to="/"
+            className="w-10 h-10 grid place-items-center rounded-full hover:bg-muted text-foreground"
+          >
+            <ChevronLeft className="w-5 h-5" />
+          </Link>
+          <div className="flex items-center gap-2 font-semibold">
+            <BabyIcon className="w-5 h-5 text-diaper-foreground" /> Log diaper
+          </div>
+        </div>
+      </header>
+
+      <main className="mx-auto max-w-md px-4 pt-4">
+        <Card className="rounded-3xl p-5 border-0 shadow-sm">
+          <form onSubmit={submit} className="space-y-5">
+            <div className="space-y-2">
+              <Label htmlFor="time">When</Label>
+              <Input
+                id="time"
+                type="datetime-local"
+                value={time}
+                onChange={(e) => setTime(e.target.value)}
+                className="h-11 rounded-xl"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label>Type</Label>
+              <div className="grid grid-cols-3 gap-2">
+                {(
+                  [
+                    { v: "wet", l: "Wet", e: "💧" },
+                    { v: "dirty", l: "Dirty", e: "💩" },
+                    { v: "mixed", l: "Mixed", e: "🌀" },
+                  ] as const
+                ).map((opt) => (
+                  <button
+                    type="button"
+                    key={opt.v}
+                    onClick={() => setType(opt.v)}
+                    className={`h-16 rounded-2xl text-sm font-medium border flex flex-col items-center justify-center gap-1 transition-colors ${
+                      type === opt.v
+                        ? "bg-diaper/40 border-diaper text-diaper-foreground"
+                        : "bg-card border-border text-foreground/70"
+                    }`}
+                  >
+                    <span className="text-xl leading-none">{opt.e}</span>
+                    {opt.l}
+                  </button>
+                ))}
+              </div>
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="note">Note (optional)</Label>
+              <Textarea
+                id="note"
+                value={note}
+                onChange={(e) => setNote(e.target.value)}
+                rows={3}
+                className="rounded-xl resize-none"
+                placeholder="Color, consistency, anything notable…"
+              />
+            </div>
+
+            <Button
+              type="submit"
+              disabled={loading}
+              className="w-full h-12 rounded-2xl text-base font-semibold bg-diaper hover:bg-diaper/90 text-diaper-foreground"
+            >
+              {loading ? "Saving…" : "Save diaper"}
+            </Button>
+          </form>
+        </Card>
+      </main>
+    </div>
+  );
+}
