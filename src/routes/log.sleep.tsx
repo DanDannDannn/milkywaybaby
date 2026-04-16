@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { ChevronLeft, Moon } from "lucide-react";
 import { toLocalInput, fromLocalInput } from "@/lib/time";
+import { DateTimePicker } from "@/components/date-time-picker";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/log/sleep")({
@@ -92,29 +93,17 @@ function LogSleep() {
         <Card className="rounded-3xl p-5 border-0 shadow-sm">
           <form onSubmit={submit} className="space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="start" className="text-base font-bold">
+              <Label htmlFor="start-date" className="text-base font-bold">
                 Sleep time
               </Label>
-              <Input
-                id="start"
-                type="datetime-local"
-                value={start}
-                onChange={(e) => setStart(e.target.value)}
-                className="h-12 rounded-2xl text-base"
-              />
+              <DateTimePicker value={start} onChange={setStart} idPrefix="start" />
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="end" className="text-base font-bold">
+              <Label htmlFor="end-date" className="text-base font-bold">
                 Awake time
               </Label>
-              <Input
-                id="end"
-                type="datetime-local"
-                value={end}
-                onChange={(e) => setEnd(e.target.value)}
-                className="h-12 rounded-2xl text-base"
-              />
+              <DateTimePicker value={end} onChange={setEnd} idPrefix="end" />
             </div>
 
             <div className="rounded-2xl bg-sleep/30 p-4 text-center">

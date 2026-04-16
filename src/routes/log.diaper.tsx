@@ -10,6 +10,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Card } from "@/components/ui/card";
 import { ChevronLeft, Baby as BabyIcon } from "lucide-react";
 import { toLocalInput, fromLocalInput } from "@/lib/time";
+import { DateTimePicker } from "@/components/date-time-picker";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/log/diaper")({
@@ -72,14 +73,8 @@ function LogDiaper() {
         <Card className="rounded-3xl p-5 border-0 shadow-sm">
           <form onSubmit={submit} className="space-y-5">
             <div className="space-y-2">
-              <Label htmlFor="time">When</Label>
-              <Input
-                id="time"
-                type="datetime-local"
-                value={time}
-                onChange={(e) => setTime(e.target.value)}
-                className="h-11 rounded-xl"
-              />
+              <Label>When</Label>
+              <DateTimePicker value={time} onChange={setTime} idPrefix="diaper" />
             </div>
 
             <div className="space-y-2">
