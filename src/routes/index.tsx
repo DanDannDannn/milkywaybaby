@@ -8,6 +8,7 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Milk, Baby as BabyIcon, History, Loader2, Moon } from "lucide-react";
 import { timeAgo, startOfDay, endOfDay } from "@/lib/time";
+import babyHero from "@/assets/baby-hero.png";
 
 export const Route = createFileRoute("/")({
   component: HomePage,
