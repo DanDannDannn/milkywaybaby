@@ -15,6 +15,7 @@ import { Route as HistoryRouteImport } from './routes/history'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as LogTempRouteImport } from './routes/log.temp'
+import { Route as LogSleepRouteImport } from './routes/log.sleep'
 import { Route as LogFeedRouteImport } from './routes/log.feed'
 import { Route as LogDiaperRouteImport } from './routes/log.diaper'
 
@@ -48,6 +49,11 @@ const LogTempRoute = LogTempRouteImport.update({
   path: '/log/temp',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LogSleepRoute = LogSleepRouteImport.update({
+  id: '/log/sleep',
+  path: '/log/sleep',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LogFeedRoute = LogFeedRouteImport.update({
   id: '/log/feed',
   path: '/log/feed',
@@ -67,6 +73,7 @@ export interface FileRoutesByFullPath {
   '/settings': typeof SettingsRoute
   '/log/diaper': typeof LogDiaperRoute
   '/log/feed': typeof LogFeedRoute
+  '/log/sleep': typeof LogSleepRoute
   '/log/temp': typeof LogTempRoute
 }
 export interface FileRoutesByTo {
@@ -77,6 +84,7 @@ export interface FileRoutesByTo {
   '/settings': typeof SettingsRoute
   '/log/diaper': typeof LogDiaperRoute
   '/log/feed': typeof LogFeedRoute
+  '/log/sleep': typeof LogSleepRoute
   '/log/temp': typeof LogTempRoute
 }
 export interface FileRoutesById {
@@ -88,6 +96,7 @@ export interface FileRoutesById {
   '/settings': typeof SettingsRoute
   '/log/diaper': typeof LogDiaperRoute
   '/log/feed': typeof LogFeedRoute
+  '/log/sleep': typeof LogSleepRoute
   '/log/temp': typeof LogTempRoute
 }
 export interface FileRouteTypes {
@@ -100,6 +109,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/log/diaper'
     | '/log/feed'
+    | '/log/sleep'
     | '/log/temp'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -110,6 +120,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/log/diaper'
     | '/log/feed'
+    | '/log/sleep'
     | '/log/temp'
   id:
     | '__root__'
@@ -120,6 +131,7 @@ export interface FileRouteTypes {
     | '/settings'
     | '/log/diaper'
     | '/log/feed'
+    | '/log/sleep'
     | '/log/temp'
   fileRoutesById: FileRoutesById
 }
@@ -131,6 +143,7 @@ export interface RootRouteChildren {
   SettingsRoute: typeof SettingsRoute
   LogDiaperRoute: typeof LogDiaperRoute
   LogFeedRoute: typeof LogFeedRoute
+  LogSleepRoute: typeof LogSleepRoute
   LogTempRoute: typeof LogTempRoute
 }
 
@@ -178,6 +191,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof LogTempRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/log/sleep': {
+      id: '/log/sleep'
+      path: '/log/sleep'
+      fullPath: '/log/sleep'
+      preLoaderRoute: typeof LogSleepRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/log/feed': {
       id: '/log/feed'
       path: '/log/feed'
@@ -203,6 +223,7 @@ const rootRouteChildren: RootRouteChildren = {
   SettingsRoute: SettingsRoute,
   LogDiaperRoute: LogDiaperRoute,
   LogFeedRoute: LogFeedRoute,
+  LogSleepRoute: LogSleepRoute,
   LogTempRoute: LogTempRoute,
 }
 export const routeTree = rootRouteImport
