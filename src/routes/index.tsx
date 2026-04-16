@@ -6,7 +6,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { AppHeader } from "@/components/app-header";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Milk, Baby as BabyIcon, History, Loader2, Thermometer } from "lucide-react";
+import { Milk, Baby as BabyIcon, History, Loader2, Moon } from "lucide-react";
 import { timeAgo, startOfDay, endOfDay } from "@/lib/time";
 
 export const Route = createFileRoute("/")({
@@ -23,9 +23,19 @@ interface LastDiaper {
   occurred_at: string;
   type: string;
 }
-interface LastTemp {
-  occurred_at: string;
-  value_c: number;
+interface SleepRow {
+  started_at: string;
+  ended_at: string;
+}
+
+function formatDuration(ms: number) {
+  if (ms <= 0) return "0m";
+  const mins = Math.round(ms / 60000);
+  const h = Math.floor(mins / 60);
+  const m = mins % 60;
+  if (h === 0) return `${m}m`;
+  if (m === 0) return `${h}h`;
+  return `${h}h ${m}m`;
 }
 
 function HomePage() {
@@ -59,10 +69,10 @@ function Home() {
   const { activeBaby } = useBaby();
   const [lastFeed, setLastFeed] = useState<LastFeeding | null>(null);
   const [lastDiaper, setLastDiaper] = useState<LastDiaper | null>(null);
-  const [lastTemp, setLastTemp] = useState<LastTemp | null>(null);
+  const [lastSleep, setLastSleep] = useState<SleepRow | null>(null);
   const [todayMl, setTodayMl] = useState(0);
   const [todayCount, setTodayCount] = useState(0);
-  const [tempLoggedToday, setTempLoggedToday] = useState(false);
+  const [todaySleepMs, setTodaySleepMs] = useState(0);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -70,10 +80,12 @@ function Home() {
     let active = true;
     (async () => {
       setLoading(true);
-      const dayStart = startOfDay(new Date()).toISOString();
-      const dayEnd = endOfDay(new Date()).toISOString();
+      const dayStart = startOfDay(new Date());
+      const dayEnd = endOfDay(new Date());
+      const dayStartIso = dayStart.toISOString();
+      const dayEndIso = dayEnd.toISOString();
 
-      const [{ data: f }, { data: d }, { data: t }, { data: todayFeeds }, { data: todayTemps }] =
+      const [{ data: f }, { data: d }, { data: s }, { data: todayFeeds }, { data: todaySleeps }] =
         await Promise.all([
           supabase
             .from("feedings")
@@ -90,32 +102,31 @@ function Home() {
             .limit(1)
             .maybeSingle(),
           supabase
-            .from("temperatures")
-            .select("occurred_at, value_c")
+            .from("sleeps")
+            .select("started_at, ended_at")
             .eq("baby_id", activeBaby.id)
-            .order("occurred_at", { ascending: false })
+            .order("ended_at", { ascending: false })
             .limit(1)
             .maybeSingle(),
           supabase
             .from("feedings")
             .select("amount, unit")
             .eq("baby_id", activeBaby.id)
-            .gte("occurred_at", dayStart)
-            .lte("occurred_at", dayEnd),
+            .gte("occurred_at", dayStartIso)
+            .lte("occurred_at", dayEndIso),
           supabase
-            .from("temperatures")
-            .select("id")
+            .from("sleeps")
+            .select("started_at, ended_at")
             .eq("baby_id", activeBaby.id)
-            .gte("occurred_at", dayStart)
-            .lte("occurred_at", dayEnd)
-            .limit(1),
+            .gte("ended_at", dayStartIso)
+            .lte("started_at", dayEndIso),
         ]);
 
       if (!active) return;
 
       setLastFeed(f as LastFeeding | null);
       setLastDiaper(d as LastDiaper | null);
-      setLastTemp(t as LastTemp | null);
+      setLastSleep(s as SleepRow | null);
 
       let total = 0;
       const list = (todayFeeds ?? []) as { amount: number; unit: string }[];
@@ -124,7 +135,17 @@ function Home() {
       }
       setTodayMl(Math.round(total));
       setTodayCount(list.length);
-      setTempLoggedToday(((todayTemps ?? []) as unknown[]).length > 0);
+
+      // Sum sleep duration overlapping with today
+      const sleepRows = (todaySleeps ?? []) as SleepRow[];
+      let sleepMs = 0;
+      for (const row of sleepRows) {
+        const startMs = Math.max(new Date(row.started_at).getTime(), dayStart.getTime());
+        const endMs = Math.min(new Date(row.ended_at).getTime(), dayEnd.getTime());
+        if (endMs > startMs) sleepMs += endMs - startMs;
+      }
+      setTodaySleepMs(sleepMs);
+
       setLoading(false);
     })();
     return () => {
@@ -158,24 +179,19 @@ function Home() {
           </div>
         </Card>
 
-        {/* Temperature task card */}
-        {!loading && !tempLoggedToday && (
-          <Link
-            to="/log/temp"
-            className="block rounded-3xl p-4 bg-temperature/40 border border-temperature/60 shadow-sm hover:bg-temperature/55 transition-colors"
-          >
-            <div className="flex items-center gap-3">
-              <div className="w-12 h-12 rounded-2xl bg-card grid place-items-center shadow-sm">
-                <Thermometer className="w-6 h-6 text-temperature-foreground" />
-              </div>
-              <div className="flex-1">
-                <div className="text-base font-bold text-foreground">Today's task</div>
-                <div className="text-sm text-foreground/70">Record baby's temperature</div>
-              </div>
-              <div className="text-2xl">→</div>
-            </div>
-          </Link>
-        )}
+        {/* Today's sleep total */}
+        <Card className="rounded-[2rem] p-5 border-0 shadow-sm bg-sleep/40">
+          <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-sleep-foreground/80">
+            <Moon className="w-4 h-4" /> Today's sleep
+          </div>
+          <div className="mt-1 text-4xl font-extrabold text-foreground">
+            {loading ? (
+              <div className="h-9 w-28 rounded-xl bg-foreground/10 animate-pulse" />
+            ) : (
+              formatDuration(todaySleepMs)
+            )}
+          </div>
+        </Card>
 
         {/* Status cards */}
         <div className="grid grid-cols-2 gap-3">
@@ -220,17 +236,20 @@ function Home() {
             )}
           </Card>
 
-          {lastTemp && (
-            <Card className="rounded-3xl p-4 border-0 bg-temperature/30 shadow-sm col-span-2">
-              <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-temperature-foreground/80">
-                <Thermometer className="w-4 h-4" /> Last temperature
+          {lastSleep && (
+            <Card className="rounded-3xl p-4 border-0 bg-sleep/30 shadow-sm col-span-2">
+              <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-sleep-foreground/80">
+                <Moon className="w-4 h-4" /> Last sleep
               </div>
               <div className="mt-2 flex items-baseline gap-3">
                 <span className="text-2xl font-extrabold text-foreground">
-                  {Number(lastTemp.value_c).toFixed(1)}°C
+                  {formatDuration(
+                    new Date(lastSleep.ended_at).getTime() -
+                      new Date(lastSleep.started_at).getTime()
+                  )}
                 </span>
                 <span className="text-sm font-medium text-foreground/60">
-                  {timeAgo(lastTemp.occurred_at)}
+                  ended {timeAgo(lastSleep.ended_at)}
                 </span>
               </div>
             </Card>
@@ -257,11 +276,10 @@ function Home() {
           </Button>
           <Button
             asChild
-            variant="outline"
-            className="h-16 rounded-full text-lg font-bold border-2 border-temperature bg-temperature/20 hover:bg-temperature/35 text-foreground"
+            className="h-20 rounded-full text-xl font-extrabold shadow-md bg-sleep hover:bg-sleep/90 text-sleep-foreground"
           >
-            <Link to="/log/temp">
-              <Thermometer className="!w-6 !h-6" /> Temperature
+            <Link to="/log/sleep">
+              <Moon className="!w-7 !h-7" /> Sleep
             </Link>
           </Button>
         </div>
