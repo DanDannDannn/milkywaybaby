@@ -38,6 +38,8 @@
   --color-diaper-foreground: var(--diaper-foreground);
   --color-temperature: var(--temperature);
   --color-temperature-foreground: var(--temperature-foreground);
+  --color-sleep: var(--sleep);
+  --color-sleep-foreground: var(--sleep-foreground);
   --color-mint: var(--mint);
   --color-peach: var(--peach);
   --color-cream: var(--cream);
