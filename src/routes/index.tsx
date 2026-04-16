@@ -73,6 +73,7 @@ function Home() {
   const [todayMl, setTodayMl] = useState(0);
   const [todayCount, setTodayCount] = useState(0);
   const [todaySleepMs, setTodaySleepMs] = useState(0);
+  const [lastTemp, setLastTemp] = useState<{ value_c: number; occurred_at: string } | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -142,6 +143,7 @@ function Home() {
       setLastFeed(f as LastFeeding | null);
       setLastDiaper(d as LastDiaper | null);
       setLastSleep(s as SleepRow | null);
+      setLastTemp(t as { value_c: number; occurred_at: string } | null);
 
       let total = 0;
       const list = (todayFeeds ?? []) as { amount: number; unit: string }[];
