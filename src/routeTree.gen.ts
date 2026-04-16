@@ -9,14 +9,21 @@
 // Additionally, you should also exclude this file from your linter and/or formatter to prevent it from being checked or modified.
 
 import { Route as rootRouteImport } from './routes/__root'
+import { Route as SettingsRouteImport } from './routes/settings'
 import { Route as OnboardingRouteImport } from './routes/onboarding'
 import { Route as HistoryRouteImport } from './routes/history'
 import { Route as BabySettingsRouteImport } from './routes/baby-settings'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as LogTempRouteImport } from './routes/log.temp'
 import { Route as LogFeedRouteImport } from './routes/log.feed'
 import { Route as LogDiaperRouteImport } from './routes/log.diaper'
 
+const SettingsRoute = SettingsRouteImport.update({
+  id: '/settings',
+  path: '/settings',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const OnboardingRoute = OnboardingRouteImport.update({
   id: '/onboarding',
   path: '/onboarding',
@@ -42,6 +49,11 @@ const IndexRoute = IndexRouteImport.update({
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const LogTempRoute = LogTempRouteImport.update({
+  id: '/log/temp',
+  path: '/log/temp',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const LogFeedRoute = LogFeedRouteImport.update({
   id: '/log/feed',
   path: '/log/feed',
@@ -59,8 +71,10 @@ export interface FileRoutesByFullPath {
   '/baby-settings': typeof BabySettingsRoute
   '/history': typeof HistoryRoute
   '/onboarding': typeof OnboardingRoute
+  '/settings': typeof SettingsRoute
   '/log/diaper': typeof LogDiaperRoute
   '/log/feed': typeof LogFeedRoute
+  '/log/temp': typeof LogTempRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -68,8 +82,10 @@ export interface FileRoutesByTo {
   '/baby-settings': typeof BabySettingsRoute
   '/history': typeof HistoryRoute
   '/onboarding': typeof OnboardingRoute
+  '/settings': typeof SettingsRoute
   '/log/diaper': typeof LogDiaperRoute
   '/log/feed': typeof LogFeedRoute
+  '/log/temp': typeof LogTempRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -78,8 +94,10 @@ export interface FileRoutesById {
   '/baby-settings': typeof BabySettingsRoute
   '/history': typeof HistoryRoute
   '/onboarding': typeof OnboardingRoute
+  '/settings': typeof SettingsRoute
   '/log/diaper': typeof LogDiaperRoute
   '/log/feed': typeof LogFeedRoute
+  '/log/temp': typeof LogTempRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -89,8 +107,10 @@ export interface FileRouteTypes {
     | '/baby-settings'
     | '/history'
     | '/onboarding'
+    | '/settings'
     | '/log/diaper'
     | '/log/feed'
+    | '/log/temp'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -98,8 +118,10 @@ export interface FileRouteTypes {
     | '/baby-settings'
     | '/history'
     | '/onboarding'
+    | '/settings'
     | '/log/diaper'
     | '/log/feed'
+    | '/log/temp'
   id:
     | '__root__'
     | '/'
@@ -107,8 +129,10 @@ export interface FileRouteTypes {
     | '/baby-settings'
     | '/history'
     | '/onboarding'
+    | '/settings'
     | '/log/diaper'
     | '/log/feed'
+    | '/log/temp'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -117,12 +141,21 @@ export interface RootRouteChildren {
   BabySettingsRoute: typeof BabySettingsRoute
   HistoryRoute: typeof HistoryRoute
   OnboardingRoute: typeof OnboardingRoute
+  SettingsRoute: typeof SettingsRoute
   LogDiaperRoute: typeof LogDiaperRoute
   LogFeedRoute: typeof LogFeedRoute
+  LogTempRoute: typeof LogTempRoute
 }
 
 declare module '@tanstack/react-router' {
   interface FileRoutesByPath {
+    '/settings': {
+      id: '/settings'
+      path: '/settings'
+      fullPath: '/settings'
+      preLoaderRoute: typeof SettingsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/onboarding': {
       id: '/onboarding'
       path: '/onboarding'
@@ -158,6 +191,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/log/temp': {
+      id: '/log/temp'
+      path: '/log/temp'
+      fullPath: '/log/temp'
+      preLoaderRoute: typeof LogTempRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/log/feed': {
       id: '/log/feed'
       path: '/log/feed'
@@ -181,9 +221,20 @@ const rootRouteChildren: RootRouteChildren = {
   BabySettingsRoute: BabySettingsRoute,
   HistoryRoute: HistoryRoute,
   OnboardingRoute: OnboardingRoute,
+  SettingsRoute: SettingsRoute,
   LogDiaperRoute: LogDiaperRoute,
   LogFeedRoute: LogFeedRoute,
+  LogTempRoute: LogTempRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
+
+import type { getRouter } from './router.tsx'
+import type { createStart } from '@tanstack/react-start'
+declare module '@tanstack/react-start' {
+  interface Register {
+    ssr: true
+    router: Awaited<ReturnType<typeof getRouter>>
+  }
+}
