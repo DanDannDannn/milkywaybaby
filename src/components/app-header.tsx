@@ -17,27 +17,28 @@ export function AppHeader() {
   const { babies, activeBaby, setActiveBabyId } = useBaby();
 
   const initial = activeBaby?.name?.[0]?.toUpperCase() ?? "?";
+  const title = activeBaby?.name ? `${activeBaby.name}'s log` : "Little Logs";
 
   return (
     <header className="sticky top-0 z-30 backdrop-blur bg-background/80 border-b border-border/40">
-      <div className="mx-auto max-w-md px-4 h-14 flex items-center justify-between gap-3">
+      <div className="mx-auto max-w-md px-4 h-16 flex items-center justify-between gap-3">
         <DropdownMenu>
           <DropdownMenuTrigger className="flex items-center gap-2 rounded-full pr-3 pl-1 py-1 hover:bg-muted transition-colors">
-            <div className="w-9 h-9 rounded-full bg-gradient-to-br from-peach to-mint grid place-items-center text-base font-semibold text-foreground/80 shadow-sm">
+            <div className="w-10 h-10 rounded-full bg-gradient-to-br from-primary to-secondary grid place-items-center text-base font-extrabold text-primary-foreground shadow-sm">
               {initial}
             </div>
-            <span className="font-semibold text-foreground truncate max-w-[140px]">
-              {activeBaby?.name ?? "No baby"}
+            <span className="font-extrabold text-lg text-foreground truncate max-w-[180px]">
+              {title}
             </span>
             <ChevronDown className="w-4 h-4 text-muted-foreground" />
           </DropdownMenuTrigger>
-          <DropdownMenuContent align="start" className="w-56 rounded-2xl">
+          <DropdownMenuContent align="start" className="w-60 rounded-2xl">
             <DropdownMenuLabel>Babies</DropdownMenuLabel>
             {babies.map((b) => (
               <DropdownMenuItem
                 key={b.id}
                 onClick={() => setActiveBabyId(b.id)}
-                className={b.id === activeBaby?.id ? "font-semibold" : ""}
+                className={`text-base ${b.id === activeBaby?.id ? "font-extrabold" : "font-medium"}`}
               >
                 {b.name}
               </DropdownMenuItem>
@@ -54,9 +55,9 @@ export function AppHeader() {
         <div className="flex items-center gap-1">
           {activeBaby && (
             <Link
-              to="/baby-settings"
-              className="w-9 h-9 grid place-items-center rounded-full hover:bg-muted text-muted-foreground"
-              aria-label="Baby settings"
+              to="/settings"
+              className="w-10 h-10 grid place-items-center rounded-full hover:bg-muted text-muted-foreground"
+              aria-label="Settings"
             >
               <Settings className="w-5 h-5" />
             </Link>
@@ -66,7 +67,7 @@ export function AppHeader() {
               await signOut();
               router.navigate({ to: "/auth" });
             }}
-            className="w-9 h-9 grid place-items-center rounded-full hover:bg-muted text-muted-foreground"
+            className="w-10 h-10 grid place-items-center rounded-full hover:bg-muted text-muted-foreground"
             aria-label="Sign out"
           >
             <LogOut className="w-5 h-5" />
