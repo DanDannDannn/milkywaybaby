@@ -301,7 +301,7 @@ function HistoryPage() {
                       }`}
                     >
                       <span className="text-[10px] font-bold uppercase tracking-wider opacity-70">
-                        {d.toLocaleDateString([], { weekday: "short" })[0]}
+                        {d.toLocaleDateString("en-US", { weekday: "short" })[0]}
                       </span>
                       <span
                         className={`mt-0.5 text-base font-extrabold ${
