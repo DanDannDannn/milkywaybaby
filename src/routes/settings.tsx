@@ -7,7 +7,18 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ChevronLeft, Copy, Loader2, Save, Download, LogOut, User } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { ChevronLeft, Copy, Loader2, Save, Download, LogOut, User, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/settings")({
@@ -32,7 +43,7 @@ function toCsv(rows: Record<string, unknown>[]): string {
 function SettingsPage() {
   const navigate = useNavigate();
   const { user, loading: authLoading, signOut } = useAuth();
-  const { activeBaby, loading, refresh } = useBaby();
+  const { activeBaby, loading, refresh, setActiveBabyId, babies } = useBaby();
   const [name, setName] = useState("");
   const [birth, setBirth] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -41,6 +52,8 @@ function SettingsPage() {
   const [savingProfile, setSavingProfile] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [confirmName, setConfirmName] = useState("");
 
   useEffect(() => {
     if (authLoading) return;
@@ -243,6 +256,28 @@ function SettingsPage() {
     navigate({ to: "/auth" });
   };
 
+  const isOwner = activeBaby.created_by === user.id;
+
+  const deleteBaby = async () => {
+    if (!activeBaby) return;
+    setDeleting(true);
+    const deletedId = activeBaby.id;
+    const { error } = await supabase.from("babies").delete().eq("id", deletedId);
+    if (error) {
+      setDeleting(false);
+      toast.error(error.message);
+      return;
+    }
+    // Pick a new active baby if any remain
+    const remaining = babies.filter((b) => b.id !== deletedId);
+    if (remaining.length > 0) setActiveBabyId(remaining[0].id);
+    await refresh();
+    setDeleting(false);
+    setConfirmName("");
+    toast.success(`${activeBaby.name} deleted`);
+    navigate({ to: remaining.length > 0 ? "/" : "/onboarding" });
+  };
+
   return (
     <div className="min-h-screen pb-12 bg-background">
       <header className="sticky top-0 z-30 backdrop-blur bg-background/80 border-b border-border/40">
@@ -388,7 +423,68 @@ function SettingsPage() {
           </Button>
         </Card>
 
-        {/* Sign out */}
+        {/* Danger zone */}
+        {isOwner && (
+          <Card className="rounded-3xl p-5 border-2 border-destructive/30 shadow-sm space-y-3 bg-destructive/5">
+            <h2 className="text-base font-extrabold text-destructive">Danger zone</h2>
+            <p className="text-sm text-muted-foreground">
+              Permanently delete <span className="font-semibold">{activeBaby.name}</span> and all
+              their feedings, diapers, sleeps, and temperatures. This can't be undone.
+            </p>
+            <AlertDialog
+              onOpenChange={(open) => {
+                if (!open) setConfirmName("");
+              }}
+            >
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="w-full h-12 rounded-full font-bold border-2 border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                >
+                  <Trash2 className="w-4 h-4" /> Delete baby
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent className="rounded-3xl">
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete {activeBaby.name}?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This permanently removes <span className="font-semibold">{activeBaby.name}</span>{" "}
+                    and every log (feedings, diapers, sleeps, temperatures). Other caregivers will
+                    lose access too. This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <div className="space-y-2">
+                  <Label htmlFor="confirm-name" className="text-sm font-bold">
+                    Type <span className="font-mono">{activeBaby.name}</span> to confirm
+                  </Label>
+                  <Input
+                    id="confirm-name"
+                    value={confirmName}
+                    onChange={(e) => setConfirmName(e.target.value)}
+                    placeholder={activeBaby.name}
+                    className="h-11 rounded-xl"
+                    autoComplete="off"
+                  />
+                </div>
+                <AlertDialogFooter>
+                  <AlertDialogCancel className="rounded-full">Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={(e) => {
+                      e.preventDefault();
+                      void deleteBaby();
+                    }}
+                    disabled={deleting || confirmName.trim() !== activeBaby.name}
+                    className="rounded-full bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    {deleting ? "Deleting…" : "Delete forever"}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </Card>
+        )}
+
+
         <Card className="rounded-3xl p-5 border-0 shadow-sm">
           <Button
             onClick={handleSignOut}
