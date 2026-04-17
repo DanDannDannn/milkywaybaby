@@ -7,7 +7,18 @@ import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { ChevronLeft, Copy, Loader2, Save, Download, LogOut, User } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
+import { ChevronLeft, Copy, Loader2, Save, Download, LogOut, User, Trash2 } from "lucide-react";
 import { toast } from "sonner";
 
 export const Route = createFileRoute("/settings")({
@@ -32,7 +43,7 @@ function toCsv(rows: Record<string, unknown>[]): string {
 function SettingsPage() {
   const navigate = useNavigate();
   const { user, loading: authLoading, signOut } = useAuth();
-  const { activeBaby, loading, refresh } = useBaby();
+  const { activeBaby, loading, refresh, setActiveBabyId, babies } = useBaby();
   const [name, setName] = useState("");
   const [birth, setBirth] = useState("");
   const [displayName, setDisplayName] = useState("");
@@ -41,6 +52,8 @@ function SettingsPage() {
   const [savingProfile, setSavingProfile] = useState(false);
   const [downloading, setDownloading] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [deleting, setDeleting] = useState(false);
+  const [confirmName, setConfirmName] = useState("");
 
   useEffect(() => {
     if (authLoading) return;
@@ -241,6 +254,28 @@ function SettingsPage() {
   const handleSignOut = async () => {
     await signOut();
     navigate({ to: "/auth" });
+  };
+
+  const isOwner = activeBaby.created_by === user.id;
+
+  const deleteBaby = async () => {
+    if (!activeBaby) return;
+    setDeleting(true);
+    const deletedId = activeBaby.id;
+    const { error } = await supabase.from("babies").delete().eq("id", deletedId);
+    if (error) {
+      setDeleting(false);
+      toast.error(error.message);
+      return;
+    }
+    // Pick a new active baby if any remain
+    const remaining = babies.filter((b) => b.id !== deletedId);
+    if (remaining.length > 0) setActiveBabyId(remaining[0].id);
+    await refresh();
+    setDeleting(false);
+    setConfirmName("");
+    toast.success(`${activeBaby.name} deleted`);
+    navigate({ to: remaining.length > 0 ? "/" : "/onboarding" });
   };
 
   return (
