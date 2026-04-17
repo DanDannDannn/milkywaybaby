@@ -56,7 +56,7 @@ export const Route = createFileRoute("/history")({
 interface FeedingRow {
   id: string;
   occurred_at: string;
-  amount: number;
+  amount: number | null;
   unit: string;
   type: string;
   note: string | null;
