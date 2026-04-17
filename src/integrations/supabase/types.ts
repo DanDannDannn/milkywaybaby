@@ -119,7 +119,7 @@ export type Database = {
       }
       feedings: {
         Row: {
-          amount: number
+          amount: number | null
           baby_id: string
           created_at: string
           id: string
@@ -131,7 +131,7 @@ export type Database = {
           updated_at: string
         }
         Insert: {
-          amount: number
+          amount?: number | null
           baby_id: string
           created_at?: string
           id?: string
@@ -143,7 +143,7 @@ export type Database = {
           updated_at?: string
         }
         Update: {
-          amount?: number
+          amount?: number | null
           baby_id?: string
           created_at?: string
           id?: string

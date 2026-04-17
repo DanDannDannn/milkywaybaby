@@ -1,0 +1,1 @@
+ALTER TABLE public.feedings ALTER COLUMN amount DROP NOT NULL;
