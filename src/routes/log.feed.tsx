@@ -38,16 +38,21 @@ function LogFeed() {
   const submit = async (e: FormEvent) => {
     e.preventDefault();
     if (!user || !activeBaby) return;
-    const num = parseFloat(amount);
-    if (isNaN(num) || num <= 0) {
-      toast.error("Enter a valid amount");
-      return;
+    const trimmed = amount.trim();
+    let num: number | null = null;
+    if (trimmed !== "") {
+      const parsed = parseFloat(trimmed);
+      if (isNaN(parsed) || parsed < 0) {
+        toast.error("Enter a valid amount");
+        return;
+      }
+      num = parsed;
     }
     setLoading(true);
     const { error } = await supabase.from("feedings").insert({
       baby_id: activeBaby.id,
       occurred_at: fromLocalInput(time).toISOString(),
-      amount: num,
+      amount: num as unknown as number,
       unit,
       type,
       note: note.trim() || null,
@@ -87,26 +92,26 @@ function LogFeed() {
             </div>
 
             <div className="space-y-2">
-              <Label>Amount</Label>
+              <Label htmlFor="amount">Amount (optional)</Label>
               <div className="flex gap-2">
                 <Input
+                  id="amount"
                   type="number"
                   inputMode="decimal"
                   step="any"
                   min="0"
-                  required
                   placeholder="e.g. 90"
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
-                  className="h-11 rounded-xl text-lg"
+                  className="h-11 rounded-xl text-lg flex-1 min-w-0"
                 />
-                <div className="flex bg-muted rounded-xl p-1">
+                <div className="flex bg-muted rounded-xl p-1 shrink-0">
                   {(["ml", "oz"] as const).map((u) => (
                     <button
                       type="button"
                       key={u}
                       onClick={() => setUnit(u)}
-                      className={`px-4 rounded-lg text-sm font-medium ${
+                      className={`px-3 sm:px-4 rounded-lg text-sm font-medium ${
                         unit === u ? "bg-card shadow-sm" : "text-muted-foreground"
                       }`}
                     >
