@@ -31,10 +31,12 @@ import {
   Milk,
   Baby as BabyIcon,
   Trash2,
+  Pencil,
   Loader2,
   Thermometer,
   Moon,
 } from "lucide-react";
+import { EditEntryDialog, type EditableEntry } from "@/components/edit-entry-dialog";
 import {
   startOfWeek,
   addDays,
@@ -54,7 +56,7 @@ export const Route = createFileRoute("/history")({
 interface FeedingRow {
   id: string;
   occurred_at: string;
-  amount: number;
+  amount: number | null;
   unit: string;
   type: string;
   note: string | null;
@@ -93,6 +95,39 @@ function HistoryPage() {
   const [profiles, setProfiles] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [pendingDelete, setPendingDelete] = useState<Entry | null>(null);
+  const [editing, setEditing] = useState<EditableEntry | null>(null);
+
+  const refresh = () => setSelectedDay((d) => new Date(d.getTime()));
+
+  const openEdit = (e: Entry) => {
+    if (e.kind === "feed") {
+      setEditing({
+        kind: "feed",
+        id: e.data.id,
+        occurred_at: e.data.occurred_at,
+        amount: e.data.amount === null || e.data.amount === undefined ? null : Number(e.data.amount),
+        unit: e.data.unit as "ml" | "oz",
+        type: e.data.type as "breast" | "formula",
+        note: e.data.note,
+      });
+    } else if (e.kind === "diaper") {
+      setEditing({
+        kind: "diaper",
+        id: e.data.id,
+        occurred_at: e.data.occurred_at,
+        type: e.data.type as "wet" | "dirty" | "mixed",
+        note: e.data.note,
+      });
+    } else {
+      setEditing({
+        kind: "temp",
+        id: e.data.id,
+        occurred_at: e.data.occurred_at,
+        value_c: Number(e.data.value_c),
+        note: e.data.note,
+      });
+    }
+  };
 
   useEffect(() => {
     if (authLoading) return;
@@ -266,7 +301,7 @@ function HistoryPage() {
                       }`}
                     >
                       <span className="text-[10px] font-bold uppercase tracking-wider opacity-70">
-                        {d.toLocaleDateString([], { weekday: "short" })[0]}
+                        {d.toLocaleDateString("en-US", { weekday: "short" })[0]}
                       </span>
                       <span
                         className={`mt-0.5 text-base font-extrabold ${
@@ -337,7 +372,7 @@ function HistoryPage() {
                     <div className="flex-1 min-w-0">
                       <div className="text-base font-extrabold text-foreground">
                         {e.kind === "feed"
-                          ? `${Number(e.data.amount)}${e.data.unit} · ${e.data.type === "breast" ? "breast milk" : "formula"}`
+                          ? `${e.data.amount === null || e.data.amount === undefined ? "—" : `${Number(e.data.amount)}${e.data.unit}`} · ${e.data.type === "breast" ? "breast milk" : "formula"}`
                           : e.kind === "diaper"
                             ? e.data.type === "wet"
                               ? "Wet"
@@ -353,15 +388,26 @@ function HistoryPage() {
                         {e.data.note ? ` · ${e.data.note}` : ""}
                       </div>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => setPendingDelete(e)}
-                      className="rounded-full text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                      aria-label="Delete"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                    <div className="flex items-center gap-0.5 shrink-0">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => openEdit(e)}
+                        className="rounded-full text-muted-foreground hover:text-foreground hover:bg-muted"
+                        aria-label="Edit"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setPendingDelete(e)}
+                        className="rounded-full text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                        aria-label="Delete"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </Card>
                 ))}
               </div>
@@ -394,6 +440,12 @@ function HistoryPage() {
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
+
+      <EditEntryDialog
+        entry={editing}
+        onClose={() => setEditing(null)}
+        onSaved={refresh}
+      />
     </div>
   );
 }
@@ -514,7 +566,7 @@ function TrendsView({
               : null;
           const label =
             range === "week"
-              ? d.toLocaleDateString([], { weekday: "short" })
+              ? d.toLocaleDateString("en-US", { weekday: "short" })
               : `${d.getMonth() + 1}/${d.getDate()}`;
           return { iso: k, label, value };
         });
@@ -723,7 +775,7 @@ function TrendsView({
                   labelFormatter={(_, payload) => {
                     const p = payload?.[0]?.payload as TrendPoint | undefined;
                     if (!p) return "";
-                    return new Date(`${p.iso}T00:00:00`).toLocaleDateString([], {
+                    return new Date(`${p.iso}T00:00:00`).toLocaleDateString("en-US", {
                       weekday: "short",
                       month: "short",
                       day: "numeric",
@@ -762,7 +814,7 @@ function TrendsView({
                 {p.label}
               </div>
               <div className="text-sm font-bold text-foreground truncate">
-                {new Date(`${p.iso}T00:00:00`).toLocaleDateString([], {
+                {new Date(`${p.iso}T00:00:00`).toLocaleDateString("en-US", {
                   month: "short",
                   day: "numeric",
                 })}

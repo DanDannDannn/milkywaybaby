@@ -54,9 +54,13 @@ export function sameDay(a: Date, b: Date): boolean {
 }
 
 export function fmtTime(iso: string): string {
-  return new Date(iso).toLocaleTimeString([], { hour: "numeric", minute: "2-digit" });
+  return new Date(iso).toLocaleTimeString("en-US", { hour: "numeric", minute: "2-digit" });
 }
 
 export function fmtDayLabel(d: Date): string {
-  return d.toLocaleDateString([], { weekday: "long", month: "short", day: "numeric" });
+  return d.toLocaleDateString("en-US", { weekday: "long", month: "short", day: "numeric" });
+}
+
+export function fmtWeekdayShort(d: Date): string {
+  return d.toLocaleDateString("en-US", { weekday: "short" });
 }
