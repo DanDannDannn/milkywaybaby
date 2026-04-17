@@ -423,7 +423,68 @@ function SettingsPage() {
           </Button>
         </Card>
 
-        {/* Sign out */}
+        {/* Danger zone */}
+        {isOwner && (
+          <Card className="rounded-3xl p-5 border-2 border-destructive/30 shadow-sm space-y-3 bg-destructive/5">
+            <h2 className="text-base font-extrabold text-destructive">Danger zone</h2>
+            <p className="text-sm text-muted-foreground">
+              Permanently delete <span className="font-semibold">{activeBaby.name}</span> and all
+              their feedings, diapers, sleeps, and temperatures. This can't be undone.
+            </p>
+            <AlertDialog
+              onOpenChange={(open) => {
+                if (!open) setConfirmName("");
+              }}
+            >
+              <AlertDialogTrigger asChild>
+                <Button
+                  variant="outline"
+                  className="w-full h-12 rounded-full font-bold border-2 border-destructive text-destructive hover:bg-destructive hover:text-destructive-foreground"
+                >
+                  <Trash2 className="w-4 h-4" /> Delete baby
+                </Button>
+              </AlertDialogTrigger>
+              <AlertDialogContent className="rounded-3xl">
+                <AlertDialogHeader>
+                  <AlertDialogTitle>Delete {activeBaby.name}?</AlertDialogTitle>
+                  <AlertDialogDescription>
+                    This permanently removes <span className="font-semibold">{activeBaby.name}</span>{" "}
+                    and every log (feedings, diapers, sleeps, temperatures). Other caregivers will
+                    lose access too. This action cannot be undone.
+                  </AlertDialogDescription>
+                </AlertDialogHeader>
+                <div className="space-y-2">
+                  <Label htmlFor="confirm-name" className="text-sm font-bold">
+                    Type <span className="font-mono">{activeBaby.name}</span> to confirm
+                  </Label>
+                  <Input
+                    id="confirm-name"
+                    value={confirmName}
+                    onChange={(e) => setConfirmName(e.target.value)}
+                    placeholder={activeBaby.name}
+                    className="h-11 rounded-xl"
+                    autoComplete="off"
+                  />
+                </div>
+                <AlertDialogFooter>
+                  <AlertDialogCancel className="rounded-full">Cancel</AlertDialogCancel>
+                  <AlertDialogAction
+                    onClick={(e) => {
+                      e.preventDefault();
+                      void deleteBaby();
+                    }}
+                    disabled={deleting || confirmName.trim() !== activeBaby.name}
+                    className="rounded-full bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                  >
+                    {deleting ? "Deleting…" : "Delete forever"}
+                  </AlertDialogAction>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          </Card>
+        )}
+
+
         <Card className="rounded-3xl p-5 border-0 shadow-sm">
           <Button
             onClick={handleSignOut}
