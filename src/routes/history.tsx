@@ -566,7 +566,7 @@ function TrendsView({
               : null;
           const label =
             range === "week"
-              ? d.toLocaleDateString([], { weekday: "short" })
+              ? d.toLocaleDateString("en-US", { weekday: "short" })
               : `${d.getMonth() + 1}/${d.getDate()}`;
           return { iso: k, label, value };
         });
@@ -775,7 +775,7 @@ function TrendsView({
                   labelFormatter={(_, payload) => {
                     const p = payload?.[0]?.payload as TrendPoint | undefined;
                     if (!p) return "";
-                    return new Date(`${p.iso}T00:00:00`).toLocaleDateString([], {
+                    return new Date(`${p.iso}T00:00:00`).toLocaleDateString("en-US", {
                       weekday: "short",
                       month: "short",
                       day: "numeric",
@@ -814,7 +814,7 @@ function TrendsView({
                 {p.label}
               </div>
               <div className="text-sm font-bold text-foreground truncate">
-                {new Date(`${p.iso}T00:00:00`).toLocaleDateString([], {
+                {new Date(`${p.iso}T00:00:00`).toLocaleDateString("en-US", {
                   month: "short",
                   day: "numeric",
                 })}
