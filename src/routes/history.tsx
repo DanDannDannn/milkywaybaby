@@ -31,10 +31,12 @@ import {
   Milk,
   Baby as BabyIcon,
   Trash2,
+  Pencil,
   Loader2,
   Thermometer,
   Moon,
 } from "lucide-react";
+import { EditEntryDialog, type EditableEntry } from "@/components/edit-entry-dialog";
 import {
   startOfWeek,
   addDays,
