@@ -372,7 +372,7 @@ function HistoryPage() {
                     <div className="flex-1 min-w-0">
                       <div className="text-base font-extrabold text-foreground">
                         {e.kind === "feed"
-                          ? `${Number(e.data.amount)}${e.data.unit} · ${e.data.type === "breast" ? "breast milk" : "formula"}`
+                          ? `${e.data.amount === null || e.data.amount === undefined ? "—" : `${Number(e.data.amount)}${e.data.unit}`} · ${e.data.type === "breast" ? "breast milk" : "formula"}`
                           : e.kind === "diaper"
                             ? e.data.type === "wet"
                               ? "Wet"
@@ -388,15 +388,26 @@ function HistoryPage() {
                         {e.data.note ? ` · ${e.data.note}` : ""}
                       </div>
                     </div>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => setPendingDelete(e)}
-                      className="rounded-full text-muted-foreground hover:text-destructive hover:bg-destructive/10"
-                      aria-label="Delete"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </Button>
+                    <div className="flex items-center gap-0.5 shrink-0">
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => openEdit(e)}
+                        className="rounded-full text-muted-foreground hover:text-foreground hover:bg-muted"
+                        aria-label="Edit"
+                      >
+                        <Pencil className="w-4 h-4" />
+                      </Button>
+                      <Button
+                        variant="ghost"
+                        size="icon"
+                        onClick={() => setPendingDelete(e)}
+                        className="rounded-full text-muted-foreground hover:text-destructive hover:bg-destructive/10"
+                        aria-label="Delete"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </Button>
+                    </div>
                   </Card>
                 ))}
               </div>
