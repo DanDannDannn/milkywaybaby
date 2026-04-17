@@ -95,6 +95,39 @@ function HistoryPage() {
   const [profiles, setProfiles] = useState<Record<string, string>>({});
   const [loading, setLoading] = useState(true);
   const [pendingDelete, setPendingDelete] = useState<Entry | null>(null);
+  const [editing, setEditing] = useState<EditableEntry | null>(null);
+
+  const refresh = () => setSelectedDay((d) => new Date(d.getTime()));
+
+  const openEdit = (e: Entry) => {
+    if (e.kind === "feed") {
+      setEditing({
+        kind: "feed",
+        id: e.data.id,
+        occurred_at: e.data.occurred_at,
+        amount: e.data.amount === null || e.data.amount === undefined ? null : Number(e.data.amount),
+        unit: e.data.unit as "ml" | "oz",
+        type: e.data.type as "breast" | "formula",
+        note: e.data.note,
+      });
+    } else if (e.kind === "diaper") {
+      setEditing({
+        kind: "diaper",
+        id: e.data.id,
+        occurred_at: e.data.occurred_at,
+        type: e.data.type as "wet" | "dirty" | "mixed",
+        note: e.data.note,
+      });
+    } else {
+      setEditing({
+        kind: "temp",
+        id: e.data.id,
+        occurred_at: e.data.occurred_at,
+        value_c: Number(e.data.value_c),
+        note: e.data.note,
+      });
+    }
+  };
 
   useEffect(() => {
     if (authLoading) return;
