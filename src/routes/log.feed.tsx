@@ -52,7 +52,7 @@ function LogFeed() {
     const { error } = await supabase.from("feedings").insert({
       baby_id: activeBaby.id,
       occurred_at: fromLocalInput(time).toISOString(),
-      amount: num as number | null as number,
+      amount: num as unknown as number,
       unit,
       type,
       note: note.trim() || null,
