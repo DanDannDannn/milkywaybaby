@@ -192,6 +192,9 @@ function Home() {
               <div className="text-[11px] font-medium text-muted-foreground">
                 {todayCount} feed{todayCount === 1 ? "" : "s"}
               </div>
+              <div className="text-[11px] font-medium text-muted-foreground">
+                {lastFeed ? timeAgo(lastFeed.occurred_at) : "—"}
+              </div>
             </div>
             <div className="px-2 text-center">
               <div className="flex items-center justify-center gap-1 text-[10px] font-bold uppercase tracking-widest text-diaper-foreground">
