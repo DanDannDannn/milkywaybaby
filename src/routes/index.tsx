@@ -170,6 +170,34 @@ function Home() {
         setAvgTemp(null);
       }
 
+      const lfRow = lf as { occurred_at: string; amount: number | null; unit: string; type: string } | null;
+      setLastFeed(
+        lfRow
+          ? {
+              occurred_at: lfRow.occurred_at,
+              label:
+                lfRow.amount === null || lfRow.amount === undefined
+                  ? lfRow.type === "breast" ? "Breast milk" : "Formula"
+                  : `${Number(lfRow.amount)}${lfRow.unit} ${lfRow.type === "breast" ? "breast" : "formula"}`,
+            }
+          : null,
+      );
+      const ldRow = ld as { occurred_at: string; type: string } | null;
+      setLastDiaper(
+        ldRow
+          ? {
+              occurred_at: ldRow.occurred_at,
+              label: ldRow.type.charAt(0).toUpperCase() + ldRow.type.slice(1),
+            }
+          : null,
+      );
+      const ltRow = lt as { occurred_at: string; value_c: number } | null;
+      setLastTempEvt(
+        ltRow
+          ? { occurred_at: ltRow.occurred_at, label: `${Number(ltRow.value_c).toFixed(1)}°C` }
+          : null,
+      );
+
       setLoading(false);
     })();
     return () => {
