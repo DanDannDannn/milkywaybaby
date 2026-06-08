@@ -7,7 +7,12 @@ import { AppHeader } from "@/components/app-header";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Milk, Baby as BabyIcon, History, Loader2, Moon, Thermometer, Plus } from "lucide-react";
-import { startOfDay, endOfDay, addDays } from "@/lib/time";
+import { startOfDay, endOfDay, addDays, fmtTime, timeAgo } from "@/lib/time";
+
+interface LastEvent {
+  occurred_at: string;
+  label: string;
+}
 
 export const Route = createFileRoute("/")({
   component: HomePage,
@@ -64,6 +69,9 @@ function Home() {
   const [avgDiapers, setAvgDiapers] = useState(0);
   const [avgSleepMs, setAvgSleepMs] = useState(0);
   const [avgTemp, setAvgTemp] = useState<number | null>(null);
+  const [lastFeed, setLastFeed] = useState<LastEvent | null>(null);
+  const [lastDiaper, setLastDiaper] = useState<LastEvent | null>(null);
+  const [lastTempEvt, setLastTempEvt] = useState<LastEvent | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -77,33 +85,61 @@ function Home() {
       const startIso = rangeStart.toISOString();
       const endIso = rangeEnd.toISOString();
 
-      const [{ data: feeds }, { data: diapers }, { data: sleeps }, { data: temps }] =
-        await Promise.all([
-          supabase
-            .from("feedings")
-            .select("amount, unit")
-            .eq("baby_id", activeBaby.id)
-            .gte("occurred_at", startIso)
-            .lte("occurred_at", endIso),
-          supabase
-            .from("diapers")
-            .select("id")
-            .eq("baby_id", activeBaby.id)
-            .gte("occurred_at", startIso)
-            .lte("occurred_at", endIso),
-          supabase
-            .from("sleeps")
-            .select("started_at, ended_at")
-            .eq("baby_id", activeBaby.id)
-            .gte("ended_at", startIso)
-            .lte("started_at", endIso),
-          supabase
-            .from("temperatures")
-            .select("value_c")
-            .eq("baby_id", activeBaby.id)
-            .gte("occurred_at", startIso)
-            .lte("occurred_at", endIso),
-        ]);
+      const [
+        { data: feeds },
+        { data: diapers },
+        { data: sleeps },
+        { data: temps },
+        { data: lf },
+        { data: ld },
+        { data: lt },
+      ] = await Promise.all([
+        supabase
+          .from("feedings")
+          .select("amount, unit")
+          .eq("baby_id", activeBaby.id)
+          .gte("occurred_at", startIso)
+          .lte("occurred_at", endIso),
+        supabase
+          .from("diapers")
+          .select("id")
+          .eq("baby_id", activeBaby.id)
+          .gte("occurred_at", startIso)
+          .lte("occurred_at", endIso),
+        supabase
+          .from("sleeps")
+          .select("started_at, ended_at")
+          .eq("baby_id", activeBaby.id)
+          .gte("ended_at", startIso)
+          .lte("started_at", endIso),
+        supabase
+          .from("temperatures")
+          .select("value_c")
+          .eq("baby_id", activeBaby.id)
+          .gte("occurred_at", startIso)
+          .lte("occurred_at", endIso),
+        supabase
+          .from("feedings")
+          .select("occurred_at, amount, unit, type")
+          .eq("baby_id", activeBaby.id)
+          .order("occurred_at", { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+        supabase
+          .from("diapers")
+          .select("occurred_at, type")
+          .eq("baby_id", activeBaby.id)
+          .order("occurred_at", { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+        supabase
+          .from("temperatures")
+          .select("occurred_at, value_c")
+          .eq("baby_id", activeBaby.id)
+          .order("occurred_at", { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+      ]);
 
       if (!active) return;
 
@@ -133,6 +169,34 @@ function Home() {
       } else {
         setAvgTemp(null);
       }
+
+      const lfRow = lf as { occurred_at: string; amount: number | null; unit: string; type: string } | null;
+      setLastFeed(
+        lfRow
+          ? {
+              occurred_at: lfRow.occurred_at,
+              label:
+                lfRow.amount === null || lfRow.amount === undefined
+                  ? lfRow.type === "breast" ? "Breast milk" : "Formula"
+                  : `${Number(lfRow.amount)}${lfRow.unit} ${lfRow.type === "breast" ? "breast" : "formula"}`,
+            }
+          : null,
+      );
+      const ldRow = ld as { occurred_at: string; type: string } | null;
+      setLastDiaper(
+        ldRow
+          ? {
+              occurred_at: ldRow.occurred_at,
+              label: ldRow.type.charAt(0).toUpperCase() + ldRow.type.slice(1),
+            }
+          : null,
+      );
+      const ltRow = lt as { occurred_at: string; value_c: number } | null;
+      setLastTempEvt(
+        ltRow
+          ? { occurred_at: ltRow.occurred_at, label: `${Number(ltRow.value_c).toFixed(1)}°C` }
+          : null,
+      );
 
       setLoading(false);
     })();
@@ -230,6 +294,36 @@ function Home() {
           </div>
         </Card>
 
+        {/* Last activity — absolute local time + relative */}
+        <Card className="rounded-3xl p-4 border border-border bg-card shadow-none">
+          <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2">
+            Last activity
+          </div>
+          {loading ? (
+            <div className="h-16 rounded-md bg-foreground/5 animate-pulse" />
+          ) : (
+            <ul className="divide-y divide-border">
+              <LastRow
+                icon={<Milk className="w-4 h-4 text-primary" />}
+                title="Feed"
+                event={lastFeed}
+              />
+              <LastRow
+                icon={<BabyIcon className="w-4 h-4 text-diaper-foreground" />}
+                title="Diaper"
+                event={lastDiaper}
+              />
+              <LastRow
+                icon={<Thermometer className="w-4 h-4 text-temperature-foreground" />}
+                title="Temperature"
+                event={lastTempEvt}
+              />
+            </ul>
+          )}
+        </Card>
+
+
+
         {/* CTAs */}
         <div className="grid grid-cols-1 gap-3 pt-1">
           <Button
@@ -268,3 +362,33 @@ function Home() {
     </div>
   );
 }
+
+function LastRow({
+  icon,
+  title,
+  event,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  event: LastEvent | null;
+}) {
+  return (
+    <li className="flex items-center gap-3 py-2">
+      <div className="w-8 h-8 rounded-full bg-muted grid place-items-center shrink-0">{icon}</div>
+      <div className="flex-1 min-w-0">
+        <div className="text-sm font-bold text-foreground truncate">
+          {title}
+          {event ? <span className="ml-1 font-medium text-muted-foreground">· {event.label}</span> : null}
+        </div>
+        {event ? (
+          <div className="text-[11px] font-medium text-muted-foreground">
+            {fmtTime(event.occurred_at)} · {timeAgo(event.occurred_at)}
+          </div>
+        ) : (
+          <div className="text-[11px] font-medium text-muted-foreground">No entries yet</div>
+        )}
+      </div>
+    </li>
+  );
+}
+
