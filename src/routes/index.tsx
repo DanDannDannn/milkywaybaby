@@ -7,7 +7,12 @@ import { AppHeader } from "@/components/app-header";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Milk, Baby as BabyIcon, History, Loader2, Moon, Thermometer, Plus } from "lucide-react";
-import { startOfDay, endOfDay, addDays } from "@/lib/time";
+import { startOfDay, endOfDay, addDays, fmtTime, timeAgo } from "@/lib/time";
+
+interface LastEvent {
+  occurred_at: string;
+  label: string;
+}
 
 export const Route = createFileRoute("/")({
   component: HomePage,
