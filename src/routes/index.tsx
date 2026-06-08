@@ -294,6 +294,36 @@ function Home() {
           </div>
         </Card>
 
+        {/* Last activity — absolute local time + relative */}
+        <Card className="rounded-3xl p-4 border border-border bg-card shadow-none">
+          <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2">
+            Last activity
+          </div>
+          {loading ? (
+            <div className="h-16 rounded-md bg-foreground/5 animate-pulse" />
+          ) : (
+            <ul className="divide-y divide-border">
+              <LastRow
+                icon={<Milk className="w-4 h-4 text-primary" />}
+                title="Feed"
+                event={lastFeed}
+              />
+              <LastRow
+                icon={<BabyIcon className="w-4 h-4 text-diaper-foreground" />}
+                title="Diaper"
+                event={lastDiaper}
+              />
+              <LastRow
+                icon={<Thermometer className="w-4 h-4 text-temperature-foreground" />}
+                title="Temperature"
+                event={lastTempEvt}
+              />
+            </ul>
+          )}
+        </Card>
+
+
+
         {/* CTAs */}
         <div className="grid grid-cols-1 gap-3 pt-1">
           <Button
