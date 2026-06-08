@@ -69,6 +69,9 @@ function Home() {
   const [avgDiapers, setAvgDiapers] = useState(0);
   const [avgSleepMs, setAvgSleepMs] = useState(0);
   const [avgTemp, setAvgTemp] = useState<number | null>(null);
+  const [lastFeed, setLastFeed] = useState<LastEvent | null>(null);
+  const [lastDiaper, setLastDiaper] = useState<LastEvent | null>(null);
+  const [lastTempEvt, setLastTempEvt] = useState<LastEvent | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
