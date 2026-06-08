@@ -362,3 +362,33 @@ function Home() {
     </div>
   );
 }
+
+function LastRow({
+  icon,
+  title,
+  event,
+}: {
+  icon: React.ReactNode;
+  title: string;
+  event: LastEvent | null;
+}) {
+  return (
+    <li className="flex items-center gap-3 py-2">
+      <div className="w-8 h-8 rounded-full bg-muted grid place-items-center shrink-0">{icon}</div>
+      <div className="flex-1 min-w-0">
+        <div className="text-sm font-bold text-foreground truncate">
+          {title}
+          {event ? <span className="ml-1 font-medium text-muted-foreground">· {event.label}</span> : null}
+        </div>
+        {event ? (
+          <div className="text-[11px] font-medium text-muted-foreground">
+            {fmtTime(event.occurred_at)} · {timeAgo(event.occurred_at)}
+          </div>
+        ) : (
+          <div className="text-[11px] font-medium text-muted-foreground">No entries yet</div>
+        )}
+      </div>
+    </li>
+  );
+}
+
