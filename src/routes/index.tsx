@@ -7,22 +7,12 @@ import { AppHeader } from "@/components/app-header";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Milk, Baby as BabyIcon, History, Loader2, Moon, Thermometer, Plus } from "lucide-react";
-import { timeAgo, startOfDay, endOfDay } from "@/lib/time";
+import { startOfDay, endOfDay, addDays } from "@/lib/time";
 
 export const Route = createFileRoute("/")({
   component: HomePage,
 });
 
-interface LastFeeding {
-  occurred_at: string;
-  amount: number;
-  unit: string;
-  type: string;
-}
-interface LastDiaper {
-  occurred_at: string;
-  type: string;
-}
 interface SleepRow {
   started_at: string;
   ended_at: string;
@@ -65,15 +55,15 @@ function HomePage() {
   return <Home />;
 }
 
+const DAYS = 7;
+
 function Home() {
   const { activeBaby } = useBaby();
-  const [lastFeed, setLastFeed] = useState<LastFeeding | null>(null);
-  const [lastDiaper, setLastDiaper] = useState<LastDiaper | null>(null);
-  const [lastSleep, setLastSleep] = useState<SleepRow | null>(null);
-  const [todayMl, setTodayMl] = useState(0);
-  const [todayCount, setTodayCount] = useState(0);
-  const [todaySleepMs, setTodaySleepMs] = useState(0);
-  const [lastTemp, setLastTemp] = useState<{ value_c: number; occurred_at: string } | null>(null);
+  const [avgMl, setAvgMl] = useState(0);
+  const [avgFeeds, setAvgFeeds] = useState(0);
+  const [avgDiapers, setAvgDiapers] = useState(0);
+  const [avgSleepMs, setAvgSleepMs] = useState(0);
+  const [avgTemp, setAvgTemp] = useState<number | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -81,87 +71,68 @@ function Home() {
     let active = true;
     (async () => {
       setLoading(true);
-      const dayStart = startOfDay(new Date());
-      const dayEnd = endOfDay(new Date());
-      const dayStartIso = dayStart.toISOString();
-      const dayEndIso = dayEnd.toISOString();
+      const today = new Date();
+      const rangeStart = startOfDay(addDays(today, -(DAYS - 1)));
+      const rangeEnd = endOfDay(today);
+      const startIso = rangeStart.toISOString();
+      const endIso = rangeEnd.toISOString();
 
-      const [
-        { data: f },
-        { data: d },
-        { data: s },
-        { data: todayFeeds },
-        { data: todaySleeps },
-        { data: t },
-      ] = await Promise.all([
-        supabase
-          .from("feedings")
-          .select("occurred_at, amount, unit, type")
-          .eq("baby_id", activeBaby.id)
-          .order("occurred_at", { ascending: false })
-          .limit(1)
-          .maybeSingle(),
-        supabase
-          .from("diapers")
-          .select("occurred_at, type")
-          .eq("baby_id", activeBaby.id)
-          .order("occurred_at", { ascending: false })
-          .limit(1)
-          .maybeSingle(),
-        supabase
-          .from("sleeps")
-          .select("started_at, ended_at")
-          .eq("baby_id", activeBaby.id)
-          .order("ended_at", { ascending: false })
-          .limit(1)
-          .maybeSingle(),
-        supabase
-          .from("feedings")
-          .select("amount, unit")
-          .eq("baby_id", activeBaby.id)
-          .gte("occurred_at", dayStartIso)
-          .lte("occurred_at", dayEndIso),
-        supabase
-          .from("sleeps")
-          .select("started_at, ended_at")
-          .eq("baby_id", activeBaby.id)
-          .gte("ended_at", dayStartIso)
-          .lte("started_at", dayEndIso),
-        supabase
-          .from("temperatures")
-          .select("value_c, occurred_at")
-          .eq("baby_id", activeBaby.id)
-          .gte("occurred_at", dayStartIso)
-          .lte("occurred_at", dayEndIso)
-          .order("occurred_at", { ascending: false })
-          .limit(1)
-          .maybeSingle(),
-      ]);
+      const [{ data: feeds }, { data: diapers }, { data: sleeps }, { data: temps }] =
+        await Promise.all([
+          supabase
+            .from("feedings")
+            .select("amount, unit")
+            .eq("baby_id", activeBaby.id)
+            .gte("occurred_at", startIso)
+            .lte("occurred_at", endIso),
+          supabase
+            .from("diapers")
+            .select("id")
+            .eq("baby_id", activeBaby.id)
+            .gte("occurred_at", startIso)
+            .lte("occurred_at", endIso),
+          supabase
+            .from("sleeps")
+            .select("started_at, ended_at")
+            .eq("baby_id", activeBaby.id)
+            .gte("ended_at", startIso)
+            .lte("started_at", endIso),
+          supabase
+            .from("temperatures")
+            .select("value_c")
+            .eq("baby_id", activeBaby.id)
+            .gte("occurred_at", startIso)
+            .lte("occurred_at", endIso),
+        ]);
 
       if (!active) return;
 
-      setLastFeed(f as LastFeeding | null);
-      setLastDiaper(d as LastDiaper | null);
-      setLastSleep(s as SleepRow | null);
-      setLastTemp(t as { value_c: number; occurred_at: string } | null);
-
-      let total = 0;
-      const list = (todayFeeds ?? []) as { amount: number; unit: string }[];
-      for (const row of list) {
-        total += row.unit === "oz" ? Number(row.amount) * 29.5735 : Number(row.amount);
+      const feedList = (feeds ?? []) as { amount: number | null; unit: string }[];
+      let totalMl = 0;
+      for (const row of feedList) {
+        if (row.amount === null || row.amount === undefined) continue;
+        totalMl += row.unit === "oz" ? Number(row.amount) * 29.5735 : Number(row.amount);
       }
-      setTodayMl(Math.round(total));
-      setTodayCount(list.length);
+      setAvgMl(Math.round(totalMl / DAYS));
+      setAvgFeeds(Math.round((feedList.length / DAYS) * 10) / 10);
 
-      // Sum sleep duration overlapping with today
-      const sleepRows = (todaySleeps ?? []) as SleepRow[];
+      setAvgDiapers(Math.round(((diapers ?? []).length / DAYS) * 10) / 10);
+
       let sleepMs = 0;
-      for (const row of sleepRows) {
-        const startMs = Math.max(new Date(row.started_at).getTime(), dayStart.getTime());
-        const endMs = Math.min(new Date(row.ended_at).getTime(), dayEnd.getTime());
-        if (endMs > startMs) sleepMs += endMs - startMs;
+      for (const row of (sleeps ?? []) as SleepRow[]) {
+        const s = Math.max(new Date(row.started_at).getTime(), rangeStart.getTime());
+        const e = Math.min(new Date(row.ended_at).getTime(), rangeEnd.getTime());
+        if (e > s) sleepMs += e - s;
       }
-      setTodaySleepMs(sleepMs);
+      setAvgSleepMs(sleepMs / DAYS);
+
+      const tempList = (temps ?? []) as { value_c: number }[];
+      if (tempList.length > 0) {
+        const sum = tempList.reduce((acc, t) => acc + Number(t.value_c), 0);
+        setAvgTemp(sum / tempList.length);
+      } else {
+        setAvgTemp(null);
+      }
 
       setLoading(false);
     })();
@@ -174,8 +145,11 @@ function Home() {
     <div className="min-h-screen pb-12">
       <AppHeader />
       <main className="mx-auto max-w-md px-4 pt-4 space-y-5">
-        {/* Today's summary — bordered, color-coded to match actions */}
+        {/* 7-day average summary */}
         <Card className="rounded-3xl p-4 border-2 border-border bg-card shadow-none">
+          <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground text-center mb-2">
+            7-day average / day
+          </div>
           <div className="grid grid-cols-3 divide-x divide-border">
             <div className="px-2 text-center">
               <div className="flex items-center justify-center gap-1 text-[10px] font-bold uppercase tracking-widest text-primary">
@@ -185,15 +159,12 @@ function Home() {
                 <div className="mx-auto mt-1.5 h-7 w-16 rounded-md bg-foreground/5 animate-pulse" />
               ) : (
                 <div className="mt-1 text-2xl font-extrabold text-primary leading-tight">
-                  {todayMl}
+                  {avgMl}
                   <span className="ml-0.5 text-xs font-bold text-primary/70">ml</span>
                 </div>
               )}
               <div className="text-[11px] font-medium text-muted-foreground">
-                {todayCount} feed{todayCount === 1 ? "" : "s"}
-              </div>
-              <div className="text-[11px] font-medium text-muted-foreground">
-                {lastFeed ? timeAgo(lastFeed.occurred_at) : "—"}
+                {avgFeeds} feed{avgFeeds === 1 ? "" : "s"}
               </div>
             </div>
             <div className="px-2 text-center">
@@ -202,18 +173,12 @@ function Home() {
               </div>
               {loading ? (
                 <div className="mx-auto mt-1.5 h-7 w-16 rounded-md bg-foreground/5 animate-pulse" />
-              ) : lastDiaper ? (
-                <>
-                  <div className="mt-1 text-2xl font-extrabold text-diaper-foreground leading-tight capitalize">
-                    {lastDiaper.type}
-                  </div>
-                  <div className="text-[11px] font-medium text-muted-foreground">
-                    {timeAgo(lastDiaper.occurred_at)}
-                  </div>
-                </>
               ) : (
-                <div className="mt-1 text-sm font-medium text-muted-foreground">—</div>
+                <div className="mt-1 text-2xl font-extrabold text-diaper-foreground leading-tight">
+                  {avgDiapers}
+                </div>
               )}
+              <div className="text-[11px] font-medium text-muted-foreground">per day</div>
             </div>
             <div className="px-2 text-center">
               <div className="flex items-center justify-center gap-1 text-[10px] font-bold uppercase tracking-widest text-sleep-foreground">
@@ -223,10 +188,10 @@ function Home() {
                 <div className="mx-auto mt-1.5 h-7 w-16 rounded-md bg-foreground/5 animate-pulse" />
               ) : (
                 <div className="mt-1 text-2xl font-extrabold text-sleep-foreground leading-tight">
-                  {formatDuration(todaySleepMs)}
+                  {formatDuration(avgSleepMs)}
                 </div>
               )}
-              <div className="text-[11px] font-medium text-muted-foreground">today</div>
+              <div className="text-[11px] font-medium text-muted-foreground">per day</div>
             </div>
           </div>
           <div className="mt-3 pt-3 border-t border-border flex items-center justify-between gap-3">
@@ -240,15 +205,15 @@ function Home() {
                 </div>
                 {loading ? (
                   <div className="mt-1 h-4 w-20 rounded-md bg-foreground/5 animate-pulse" />
-                ) : lastTemp ? (
+                ) : avgTemp !== null ? (
                   <div className="text-sm font-extrabold text-foreground leading-tight">
-                    {Number(lastTemp.value_c).toFixed(1)}°C
+                    {avgTemp.toFixed(1)}°C
                     <span className="ml-1 text-[11px] font-medium text-muted-foreground">
-                      · {timeAgo(lastTemp.occurred_at)}
+                      · 7-day avg
                     </span>
                   </div>
                 ) : (
-                  <div className="text-sm font-medium text-muted-foreground">Not logged today</div>
+                  <div className="text-sm font-medium text-muted-foreground">No readings</div>
                 )}
               </div>
             </div>
