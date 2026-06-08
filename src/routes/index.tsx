@@ -85,33 +85,61 @@ function Home() {
       const startIso = rangeStart.toISOString();
       const endIso = rangeEnd.toISOString();
 
-      const [{ data: feeds }, { data: diapers }, { data: sleeps }, { data: temps }] =
-        await Promise.all([
-          supabase
-            .from("feedings")
-            .select("amount, unit")
-            .eq("baby_id", activeBaby.id)
-            .gte("occurred_at", startIso)
-            .lte("occurred_at", endIso),
-          supabase
-            .from("diapers")
-            .select("id")
-            .eq("baby_id", activeBaby.id)
-            .gte("occurred_at", startIso)
-            .lte("occurred_at", endIso),
-          supabase
-            .from("sleeps")
-            .select("started_at, ended_at")
-            .eq("baby_id", activeBaby.id)
-            .gte("ended_at", startIso)
-            .lte("started_at", endIso),
-          supabase
-            .from("temperatures")
-            .select("value_c")
-            .eq("baby_id", activeBaby.id)
-            .gte("occurred_at", startIso)
-            .lte("occurred_at", endIso),
-        ]);
+      const [
+        { data: feeds },
+        { data: diapers },
+        { data: sleeps },
+        { data: temps },
+        { data: lf },
+        { data: ld },
+        { data: lt },
+      ] = await Promise.all([
+        supabase
+          .from("feedings")
+          .select("amount, unit")
+          .eq("baby_id", activeBaby.id)
+          .gte("occurred_at", startIso)
+          .lte("occurred_at", endIso),
+        supabase
+          .from("diapers")
+          .select("id")
+          .eq("baby_id", activeBaby.id)
+          .gte("occurred_at", startIso)
+          .lte("occurred_at", endIso),
+        supabase
+          .from("sleeps")
+          .select("started_at, ended_at")
+          .eq("baby_id", activeBaby.id)
+          .gte("ended_at", startIso)
+          .lte("started_at", endIso),
+        supabase
+          .from("temperatures")
+          .select("value_c")
+          .eq("baby_id", activeBaby.id)
+          .gte("occurred_at", startIso)
+          .lte("occurred_at", endIso),
+        supabase
+          .from("feedings")
+          .select("occurred_at, amount, unit, type")
+          .eq("baby_id", activeBaby.id)
+          .order("occurred_at", { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+        supabase
+          .from("diapers")
+          .select("occurred_at, type")
+          .eq("baby_id", activeBaby.id)
+          .order("occurred_at", { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+        supabase
+          .from("temperatures")
+          .select("occurred_at, value_c")
+          .eq("baby_id", activeBaby.id)
+          .order("occurred_at", { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+      ]);
 
       if (!active) return;
 
