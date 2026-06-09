@@ -7,12 +7,7 @@ import { AppHeader } from "@/components/app-header";
 import { Card } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Milk, Baby as BabyIcon, History, Loader2, Moon, Thermometer, Plus } from "lucide-react";
-import { startOfDay, endOfDay, addDays, fmtTime, timeAgo } from "@/lib/time";
-
-interface LastEvent {
-  occurred_at: string;
-  label: string;
-}
+import { startOfDay, endOfDay, fmtTime, timeAgo } from "@/lib/time";
 
 export const Route = createFileRoute("/")({
   component: HomePage,
@@ -60,18 +55,16 @@ function HomePage() {
   return <Home />;
 }
 
-const DAYS = 7;
-
 function Home() {
   const { activeBaby } = useBaby();
-  const [avgMl, setAvgMl] = useState(0);
-  const [avgFeeds, setAvgFeeds] = useState(0);
-  const [avgDiapers, setAvgDiapers] = useState(0);
-  const [avgSleepMs, setAvgSleepMs] = useState(0);
-  const [avgTemp, setAvgTemp] = useState<number | null>(null);
-  const [lastFeed, setLastFeed] = useState<LastEvent | null>(null);
-  const [lastDiaper, setLastDiaper] = useState<LastEvent | null>(null);
-  const [lastTempEvt, setLastTempEvt] = useState<LastEvent | null>(null);
+  const [totalMl, setTotalMl] = useState(0);
+  const [totalFeeds, setTotalFeeds] = useState(0);
+  const [totalDiapers, setTotalDiapers] = useState(0);
+  const [totalSleepMs, setTotalSleepMs] = useState(0);
+  const [lastTemp, setLastTemp] = useState<{ occurred_at: string; value_c: number } | null>(null);
+  const [lastFeedAt, setLastFeedAt] = useState<string | null>(null);
+  const [lastDiaperAt, setLastDiaperAt] = useState<string | null>(null);
+  const [lastWakeAt, setLastWakeAt] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -79,57 +72,58 @@ function Home() {
     let active = true;
     (async () => {
       setLoading(true);
-      const today = new Date();
-      const rangeStart = startOfDay(addDays(today, -(DAYS - 1)));
-      const rangeEnd = endOfDay(today);
-      const startIso = rangeStart.toISOString();
-      const endIso = rangeEnd.toISOString();
+      const now = new Date();
+      const dayStart = startOfDay(now);
+      const dayEnd = endOfDay(now);
+      const dayStartIso = dayStart.toISOString();
+      const dayEndIso = dayEnd.toISOString();
 
       const [
         { data: feeds },
         { data: diapers },
         { data: sleeps },
-        { data: temps },
         { data: lf },
         { data: ld },
+        { data: ls },
         { data: lt },
       ] = await Promise.all([
         supabase
           .from("feedings")
           .select("amount, unit")
           .eq("baby_id", activeBaby.id)
-          .gte("occurred_at", startIso)
-          .lte("occurred_at", endIso),
+          .gte("occurred_at", dayStartIso)
+          .lte("occurred_at", dayEndIso),
         supabase
           .from("diapers")
           .select("id")
           .eq("baby_id", activeBaby.id)
-          .gte("occurred_at", startIso)
-          .lte("occurred_at", endIso),
+          .gte("occurred_at", dayStartIso)
+          .lte("occurred_at", dayEndIso),
         supabase
           .from("sleeps")
           .select("started_at, ended_at")
           .eq("baby_id", activeBaby.id)
-          .gte("ended_at", startIso)
-          .lte("started_at", endIso),
-        supabase
-          .from("temperatures")
-          .select("value_c")
-          .eq("baby_id", activeBaby.id)
-          .gte("occurred_at", startIso)
-          .lte("occurred_at", endIso),
+          .gte("ended_at", dayStartIso)
+          .lte("started_at", dayEndIso),
         supabase
           .from("feedings")
-          .select("occurred_at, amount, unit, type")
+          .select("occurred_at")
           .eq("baby_id", activeBaby.id)
           .order("occurred_at", { ascending: false })
           .limit(1)
           .maybeSingle(),
         supabase
           .from("diapers")
-          .select("occurred_at, type")
+          .select("occurred_at")
           .eq("baby_id", activeBaby.id)
           .order("occurred_at", { ascending: false })
+          .limit(1)
+          .maybeSingle(),
+        supabase
+          .from("sleeps")
+          .select("ended_at")
+          .eq("baby_id", activeBaby.id)
+          .order("ended_at", { ascending: false })
           .limit(1)
           .maybeSingle(),
         supabase
@@ -144,59 +138,29 @@ function Home() {
       if (!active) return;
 
       const feedList = (feeds ?? []) as { amount: number | null; unit: string }[];
-      let totalMl = 0;
+      let ml = 0;
       for (const row of feedList) {
         if (row.amount === null || row.amount === undefined) continue;
-        totalMl += row.unit === "oz" ? Number(row.amount) * 29.5735 : Number(row.amount);
+        ml += row.unit === "oz" ? Number(row.amount) * 29.5735 : Number(row.amount);
       }
-      setAvgMl(Math.round(totalMl / DAYS));
-      setAvgFeeds(Math.round((feedList.length / DAYS) * 10) / 10);
+      setTotalMl(Math.round(ml));
+      setTotalFeeds(feedList.length);
 
-      setAvgDiapers(Math.round(((diapers ?? []).length / DAYS) * 10) / 10);
+      setTotalDiapers((diapers ?? []).length);
 
       let sleepMs = 0;
       for (const row of (sleeps ?? []) as SleepRow[]) {
-        const s = Math.max(new Date(row.started_at).getTime(), rangeStart.getTime());
-        const e = Math.min(new Date(row.ended_at).getTime(), rangeEnd.getTime());
+        const s = Math.max(new Date(row.started_at).getTime(), dayStart.getTime());
+        const e = Math.min(new Date(row.ended_at).getTime(), dayEnd.getTime());
         if (e > s) sleepMs += e - s;
       }
-      setAvgSleepMs(sleepMs / DAYS);
+      setTotalSleepMs(sleepMs);
 
-      const tempList = (temps ?? []) as { value_c: number }[];
-      if (tempList.length > 0) {
-        const sum = tempList.reduce((acc, t) => acc + Number(t.value_c), 0);
-        setAvgTemp(sum / tempList.length);
-      } else {
-        setAvgTemp(null);
-      }
-
-      const lfRow = lf as { occurred_at: string; amount: number | null; unit: string; type: string } | null;
-      setLastFeed(
-        lfRow
-          ? {
-              occurred_at: lfRow.occurred_at,
-              label:
-                lfRow.amount === null || lfRow.amount === undefined
-                  ? lfRow.type === "breast" ? "Breast milk" : "Formula"
-                  : `${Number(lfRow.amount)}${lfRow.unit} ${lfRow.type === "breast" ? "breast" : "formula"}`,
-            }
-          : null,
-      );
-      const ldRow = ld as { occurred_at: string; type: string } | null;
-      setLastDiaper(
-        ldRow
-          ? {
-              occurred_at: ldRow.occurred_at,
-              label: ldRow.type.charAt(0).toUpperCase() + ldRow.type.slice(1),
-            }
-          : null,
-      );
+      setLastFeedAt((lf as { occurred_at: string } | null)?.occurred_at ?? null);
+      setLastDiaperAt((ld as { occurred_at: string } | null)?.occurred_at ?? null);
+      setLastWakeAt((ls as { ended_at: string } | null)?.ended_at ?? null);
       const ltRow = lt as { occurred_at: string; value_c: number } | null;
-      setLastTempEvt(
-        ltRow
-          ? { occurred_at: ltRow.occurred_at, label: `${Number(ltRow.value_c).toFixed(1)}°C` }
-          : null,
-      );
+      setLastTemp(ltRow ? { occurred_at: ltRow.occurred_at, value_c: Number(ltRow.value_c) } : null);
 
       setLoading(false);
     })();
@@ -209,54 +173,47 @@ function Home() {
     <div className="min-h-screen pb-12">
       <AppHeader />
       <main className="mx-auto max-w-md px-4 pt-4 space-y-5">
-        {/* 7-day average summary */}
+        {/* Today's totals + last activity */}
         <Card className="rounded-3xl p-4 border-2 border-border bg-card shadow-none">
-          <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground text-center mb-2">
-            7-day average / day
+          <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground text-center mb-3">
+            Today
           </div>
           <div className="grid grid-cols-3 divide-x divide-border">
-            <div className="px-2 text-center">
-              <div className="flex items-center justify-center gap-1 text-[10px] font-bold uppercase tracking-widest text-primary">
-                <Milk className="w-3.5 h-3.5" /> Milk
-              </div>
-              {loading ? (
-                <div className="mx-auto mt-1.5 h-7 w-16 rounded-md bg-foreground/5 animate-pulse" />
-              ) : (
-                <div className="mt-1 text-2xl font-extrabold text-primary leading-tight">
-                  {avgMl}
+            <SummaryCol
+              tone="text-primary"
+              icon={<Milk className="w-3.5 h-3.5" />}
+              label="Milk"
+              loading={loading}
+              value={
+                <>
+                  {totalMl}
                   <span className="ml-0.5 text-xs font-bold text-primary/70">ml</span>
-                </div>
-              )}
-              <div className="text-[11px] font-medium text-muted-foreground">
-                {avgFeeds} feed{avgFeeds === 1 ? "" : "s"}
-              </div>
-            </div>
-            <div className="px-2 text-center">
-              <div className="flex items-center justify-center gap-1 text-[10px] font-bold uppercase tracking-widest text-diaper-foreground">
-                <BabyIcon className="w-3.5 h-3.5" /> Diaper
-              </div>
-              {loading ? (
-                <div className="mx-auto mt-1.5 h-7 w-16 rounded-md bg-foreground/5 animate-pulse" />
-              ) : (
-                <div className="mt-1 text-2xl font-extrabold text-diaper-foreground leading-tight">
-                  {avgDiapers}
-                </div>
-              )}
-              <div className="text-[11px] font-medium text-muted-foreground">per day</div>
-            </div>
-            <div className="px-2 text-center">
-              <div className="flex items-center justify-center gap-1 text-[10px] font-bold uppercase tracking-widest text-sleep-foreground">
-                <Moon className="w-3.5 h-3.5" /> Sleep
-              </div>
-              {loading ? (
-                <div className="mx-auto mt-1.5 h-7 w-16 rounded-md bg-foreground/5 animate-pulse" />
-              ) : (
-                <div className="mt-1 text-2xl font-extrabold text-sleep-foreground leading-tight">
-                  {formatDuration(avgSleepMs)}
-                </div>
-              )}
-              <div className="text-[11px] font-medium text-muted-foreground">per day</div>
-            </div>
+                </>
+              }
+              sub={`${totalFeeds} feed${totalFeeds === 1 ? "" : "s"}`}
+              lastLabel="Last fed"
+              lastIso={lastFeedAt}
+            />
+            <SummaryCol
+              tone="text-diaper-foreground"
+              icon={<BabyIcon className="w-3.5 h-3.5" />}
+              label="Diaper"
+              loading={loading}
+              value={<>{totalDiapers}</>}
+              sub={`change${totalDiapers === 1 ? "" : "s"}`}
+              lastLabel="Last changed"
+              lastIso={lastDiaperAt}
+            />
+            <SummaryCol
+              tone="text-sleep-foreground"
+              icon={<Moon className="w-3.5 h-3.5" />}
+              label="Sleep"
+              loading={loading}
+              value={<>{formatDuration(totalSleepMs)}</>}
+              sub="today"
+              lastLabel="Awake since"
+              lastIso={lastWakeAt}
+            />
           </div>
           <div className="mt-3 pt-3 border-t border-border flex items-center justify-between gap-3">
             <div className="flex items-center gap-2 min-w-0">
@@ -269,11 +226,11 @@ function Home() {
                 </div>
                 {loading ? (
                   <div className="mt-1 h-4 w-20 rounded-md bg-foreground/5 animate-pulse" />
-                ) : avgTemp !== null ? (
+                ) : lastTemp ? (
                   <div className="text-sm font-extrabold text-foreground leading-tight">
-                    {avgTemp.toFixed(1)}°C
+                    {lastTemp.value_c.toFixed(1)}°C
                     <span className="ml-1 text-[11px] font-medium text-muted-foreground">
-                      · 7-day avg
+                      · {timeAgo(lastTemp.occurred_at)}
                     </span>
                   </div>
                 ) : (
@@ -293,36 +250,6 @@ function Home() {
             </Button>
           </div>
         </Card>
-
-        {/* Last activity — absolute local time + relative */}
-        <Card className="rounded-3xl p-4 border border-border bg-card shadow-none">
-          <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground mb-2">
-            Last activity
-          </div>
-          {loading ? (
-            <div className="h-16 rounded-md bg-foreground/5 animate-pulse" />
-          ) : (
-            <ul className="divide-y divide-border">
-              <LastRow
-                icon={<Milk className="w-4 h-4 text-primary" />}
-                title="Feed"
-                event={lastFeed}
-              />
-              <LastRow
-                icon={<BabyIcon className="w-4 h-4 text-diaper-foreground" />}
-                title="Diaper"
-                event={lastDiaper}
-              />
-              <LastRow
-                icon={<Thermometer className="w-4 h-4 text-temperature-foreground" />}
-                title="Temperature"
-                event={lastTempEvt}
-              />
-            </ul>
-          )}
-        </Card>
-
-
 
         {/* CTAs */}
         <div className="grid grid-cols-1 gap-3 pt-1">
@@ -363,32 +290,53 @@ function Home() {
   );
 }
 
-function LastRow({
+function SummaryCol({
+  tone,
   icon,
-  title,
-  event,
+  label,
+  value,
+  sub,
+  lastLabel,
+  lastIso,
+  loading,
 }: {
+  tone: string;
   icon: React.ReactNode;
-  title: string;
-  event: LastEvent | null;
+  label: string;
+  value: React.ReactNode;
+  sub: string;
+  lastLabel: string;
+  lastIso: string | null;
+  loading: boolean;
 }) {
   return (
-    <li className="flex items-center gap-3 py-2">
-      <div className="w-8 h-8 rounded-full bg-muted grid place-items-center shrink-0">{icon}</div>
-      <div className="flex-1 min-w-0">
-        <div className="text-sm font-bold text-foreground truncate">
-          {title}
-          {event ? <span className="ml-1 font-medium text-muted-foreground">· {event.label}</span> : null}
-        </div>
-        {event ? (
-          <div className="text-[11px] font-medium text-muted-foreground">
-            {fmtTime(event.occurred_at)} · {timeAgo(event.occurred_at)}
-          </div>
-        ) : (
-          <div className="text-[11px] font-medium text-muted-foreground">No entries yet</div>
-        )}
+    <div className="px-2 text-center">
+      <div className={`flex items-center justify-center gap-1 text-[10px] font-bold uppercase tracking-widest ${tone}`}>
+        {icon} {label}
       </div>
-    </li>
+      {loading ? (
+        <div className="mx-auto mt-1.5 h-7 w-16 rounded-md bg-foreground/5 animate-pulse" />
+      ) : (
+        <div className={`mt-1 text-2xl font-extrabold leading-tight ${tone}`}>{value}</div>
+      )}
+      <div className="text-[11px] font-medium text-muted-foreground">{sub}</div>
+      <div className="mt-1.5 pt-1.5 border-t border-border/60 text-[10px] font-bold uppercase tracking-wider text-muted-foreground">
+        {lastLabel}
+      </div>
+      {loading ? (
+        <div className="mx-auto mt-1 h-3 w-14 rounded bg-foreground/5 animate-pulse" />
+      ) : lastIso ? (
+        <>
+          <div className="text-[11px] font-bold text-foreground leading-tight">
+            {timeAgo(lastIso)}
+          </div>
+          <div className="text-[10px] font-medium text-muted-foreground leading-tight">
+            {fmtTime(lastIso)}
+          </div>
+        </>
+      ) : (
+        <div className="text-[11px] font-medium text-muted-foreground">—</div>
+      )}
+    </div>
   );
 }
-

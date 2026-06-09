@@ -621,14 +621,26 @@ function TrendsView({
     };
   }, [babyId, metric, days, range]);
 
+  // Average per day across the selected window (temp = mean of readings)
   const total = useMemo(() => {
     if (metric === "temp") {
       const vs = data.map((d) => d.value).filter((v): v is number => v !== null);
       if (!vs.length) return null;
       return +(vs.reduce((a, n) => a + n, 0) / vs.length).toFixed(1);
     }
-    return data.reduce((a, d) => a + (d.value ?? 0), 0);
+    if (!data.length) return 0;
+    const sum = data.reduce((a, d) => a + (d.value ?? 0), 0);
+    const avg = sum / data.length;
+    return metric === "sleep" ? +avg.toFixed(2) : Math.round(avg);
   }, [data, metric]);
+
+  // Previous-window average for comparison (prevTotal is stored as a total)
+  const prevAvg = useMemo(() => {
+    if (prevTotal === null) return null;
+    if (metric === "temp") return prevTotal;
+    const avg = prevTotal / days;
+    return metric === "sleep" ? +avg.toFixed(2) : Math.round(avg);
+  }, [prevTotal, metric, days]);
 
   const metricMeta: Record<Metric, { label: string; unit: string; color: string; icon: typeof Milk }> = {
     milk: { label: "Milk", unit: "ml", color: "hsl(var(--primary))", icon: Milk },
@@ -687,7 +699,7 @@ function TrendsView({
             </div>
             <div>
               <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                {range === "week" ? "Last 7 days" : "Last 30 days"} · {metric === "temp" ? "avg" : "total"}
+                {range === "week" ? "Last 7 days" : "Last 30 days"} · {metric === "temp" ? "avg" : "avg / day"}
               </div>
               <div className="text-2xl font-extrabold text-foreground leading-tight">
                 {total === null || total === 0 ? "—" : total}
@@ -695,7 +707,7 @@ function TrendsView({
               </div>
               {(() => {
                 const cur = total;
-                const prev = prevTotal;
+                const prev = prevAvg;
                 if (cur === null || prev === null || prev === 0 || cur === 0) {
                   return (
                     <div className="mt-0.5 text-[11px] font-bold text-muted-foreground">
@@ -707,7 +719,7 @@ function TrendsView({
                 const pct = Math.round(((cur - prev) / Math.abs(prev)) * 100);
                 const up = diff > 0;
                 const flat = diff === 0;
-                const goodUp = metric !== "temp"; // more milk/sleep = good; for temp neutral
+                const goodUp = metric !== "temp";
                 const tone = flat
                   ? "text-muted-foreground"
                   : metric === "temp"
