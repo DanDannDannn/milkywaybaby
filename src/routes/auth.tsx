@@ -35,7 +35,7 @@ function AuthPage() {
     setLoading(true);
     try {
       if (mode === "signup") {
-        const { error } = await supabase.auth.signUp({
+        const { data, error } = await supabase.auth.signUp({
           email,
           password,
           options: {
@@ -44,6 +44,15 @@ function AuthPage() {
           },
         });
         if (error) throw error;
+        // When email confirmation is enabled, signUp succeeds but returns no
+        // session — the user must confirm first. Don't claim they're signed in
+        // and navigate to "/", or the home route bounces them straight back here.
+        if (!data.session) {
+          toast.success("Account created. Check your email to confirm, then sign in.");
+          setMode("signin");
+          setPassword("");
+          return;
+        }
         toast.success("Account created! You're signed in.");
       } else {
         const { error } = await supabase.auth.signInWithPassword({ email, password });
@@ -52,7 +61,11 @@ function AuthPage() {
       navigate({ to: "/" });
     } catch (err) {
       const msg = err instanceof Error ? err.message : "Something went wrong";
-      toast.error(msg);
+      toast.error(
+        msg === "Email not confirmed"
+          ? "Please confirm your email first. We sent a confirmation link to your inbox."
+          : msg,
+      );
     } finally {
       setLoading(false);
     }
