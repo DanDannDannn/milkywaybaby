@@ -621,14 +621,26 @@ function TrendsView({
     };
   }, [babyId, metric, days, range]);
 
+  // Average per day across the selected window (temp = mean of readings)
   const total = useMemo(() => {
     if (metric === "temp") {
       const vs = data.map((d) => d.value).filter((v): v is number => v !== null);
       if (!vs.length) return null;
       return +(vs.reduce((a, n) => a + n, 0) / vs.length).toFixed(1);
     }
-    return data.reduce((a, d) => a + (d.value ?? 0), 0);
+    if (!data.length) return 0;
+    const sum = data.reduce((a, d) => a + (d.value ?? 0), 0);
+    const avg = sum / data.length;
+    return metric === "sleep" ? +avg.toFixed(2) : Math.round(avg);
   }, [data, metric]);
+
+  // Previous-window average for comparison (prevTotal is stored as a total)
+  const prevAvg = useMemo(() => {
+    if (prevTotal === null) return null;
+    if (metric === "temp") return prevTotal;
+    const avg = prevTotal / days;
+    return metric === "sleep" ? +avg.toFixed(2) : Math.round(avg);
+  }, [prevTotal, metric, days]);
 
   const metricMeta: Record<Metric, { label: string; unit: string; color: string; icon: typeof Milk }> = {
     milk: { label: "Milk", unit: "ml", color: "hsl(var(--primary))", icon: Milk },
