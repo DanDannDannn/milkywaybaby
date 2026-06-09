@@ -699,7 +699,7 @@ function TrendsView({
             </div>
             <div>
               <div className="text-[10px] font-bold uppercase tracking-widest text-muted-foreground">
-                {range === "week" ? "Last 7 days" : "Last 30 days"} · {metric === "temp" ? "avg" : "total"}
+                {range === "week" ? "Last 7 days" : "Last 30 days"} · {metric === "temp" ? "avg" : "avg / day"}
               </div>
               <div className="text-2xl font-extrabold text-foreground leading-tight">
                 {total === null || total === 0 ? "—" : total}
@@ -707,7 +707,7 @@ function TrendsView({
               </div>
               {(() => {
                 const cur = total;
-                const prev = prevTotal;
+                const prev = prevAvg;
                 if (cur === null || prev === null || prev === 0 || cur === 0) {
                   return (
                     <div className="mt-0.5 text-[11px] font-bold text-muted-foreground">
@@ -719,7 +719,7 @@ function TrendsView({
                 const pct = Math.round(((cur - prev) / Math.abs(prev)) * 100);
                 const up = diff > 0;
                 const flat = diff === 0;
-                const goodUp = metric !== "temp"; // more milk/sleep = good; for temp neutral
+                const goodUp = metric !== "temp";
                 const tone = flat
                   ? "text-muted-foreground"
                   : metric === "temp"
