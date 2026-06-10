@@ -1,0 +1,1 @@
+GRANT EXECUTE ON FUNCTION public.is_baby_member(uuid, uuid) TO authenticated;

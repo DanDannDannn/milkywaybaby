@@ -1,47 +1,32 @@
+# Fix: signed-in users can't load app data
 
-## Baby Feed & Diaper Tracker
+## Root cause
 
-A mobile-friendly webapp for new parents to log feedings and diaper changes, shareable across caregivers.
+Yesterday's security hardening revoked `EXECUTE` on `public.is_baby_member(uuid, uuid)` from `authenticated`. But that function is called **inside the RLS policies** on `babies`, `baby_members`, and `profiles`:
 
-### Auth & Sharing
-- **Email/password registration & login** via Lovable Cloud
-- After signup, user either **creates a baby** (name, birth date, photo optional) or **joins one with an invite code**
-- Each baby has a 6-character invite code; from the baby's settings page caregivers can copy/share it
-- A user can belong to multiple babies; an active baby is selected in the header
+- `babies` SELECT: `is_baby_member(id, auth.uid()) OR created_by = auth.uid()`
+- `babies` UPDATE: `is_baby_member(id, auth.uid())`
+- `baby_members` SELECT: `user_id = auth.uid() OR is_baby_member(baby_id, auth.uid())`
+- `profiles` SELECT (co-caregivers): joins via `baby_members`
 
-### Home Page (mobile-first)
-- Header: baby name + avatar, switcher if multiple babies
-- Two summary cards:
-  - 🍼 **Last feeding** — "2h 15m ago • 90ml formula"
-  - 🧷 **Last diaper change** — "45m ago • wet"
-- Two large CTA buttons: **"Log feeding"** and **"Log diaper"**
-- Quick link to History
+RLS policy expressions run as the querying role (`authenticated`). Without `EXECUTE`, every read of these tables errors with `permission denied for function is_baby_member`. Auth logs confirm sign-in itself succeeds (HTTP 200 on `/token`), so the user logs in but the app can't load any baby/profile data and appears stuck.
 
-### Log Feeding
-- Time picker (defaults to now, editable)
-- Amount (number) + unit toggle (ml / oz)
-- Type: Breast milk / Formula
-- Optional note
-- Save → returns to home
+The other revoked functions are fine: `handle_new_user`, `add_baby_creator_as_member`, and `update_updated_at_column` are trigger functions (Postgres does not check `EXECUTE` for triggers), and `join_baby_by_code` was intentionally kept callable by `authenticated`.
 
-### Log Diaper
-- Time picker (defaults to now, editable)
-- Type selector: Wet / Dirty / Mixed
-- Optional note
-- Save → returns to home
+Email verification is unrelated — auth confirmation settings weren't changed yesterday, and the failing logins from `heywudan@gmail.com` were `invalid_credentials` (wrong password), not unconfirmed-email.
 
-### History Page
-- **Weekly calendar strip** at top (7 days, swipeable, current day highlighted)
-- Tap a day → chronological list for that day mixing feedings and diapers with icons, time, and details
-- Daily summary chip: total ml, # feedings, # diapers
-- Tap any entry to **edit or delete**
+## Fix
 
-### Visual Style
-Soft pastel & friendly — peach, mint, soft blue accents on cream background, rounded cards, gentle shadows, large tap targets suited for one-handed phone use during night feeds.
+Single migration that restores the missing grant:
 
-### Data Model (Lovable Cloud)
-- `babies` (id, name, birth_date, invite_code, created_by)
-- `baby_members` (baby_id, user_id, role) — enables multi-caregiver sharing with RLS
-- `feedings` (id, baby_id, occurred_at, amount, unit, type, note, logged_by)
-- `diapers` (id, baby_id, occurred_at, type, note, logged_by)
-- RLS: users can only access babies they're a member of
+```sql
+GRANT EXECUTE ON FUNCTION public.is_baby_member(uuid, uuid) TO authenticated;
+```
+
+This is safe to expose: `is_baby_member` is `SECURITY DEFINER STABLE` and only returns a boolean from a membership lookup keyed by the caller-supplied ids. It does not leak data beyond what the existing RLS policies already authorize.
+
+## Verification
+
+1. Run the migration.
+2. Re-test sign-in in the published app (`milkywaybaby.lovable.app`) — the home page should load the baby list and today's summary instead of hanging.
+3. Update `mem://security` to note that any helper invoked from an RLS policy must keep `EXECUTE` for the roles whose policies reference it.
