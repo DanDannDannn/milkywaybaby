@@ -643,9 +643,9 @@ function TrendsView({
   }, [prevTotal, metric, days]);
 
   const metricMeta: Record<Metric, { label: string; unit: string; color: string; icon: typeof Milk }> = {
-    milk: { label: "Milk", unit: "ml", color: "hsl(var(--primary))", icon: Milk },
-    sleep: { label: "Sleep", unit: "h", color: "hsl(var(--sleep-foreground))", icon: Moon },
-    temp: { label: "Temperature", unit: "°C", color: "hsl(var(--temperature-foreground))", icon: Thermometer },
+    milk: { label: "Milk", unit: "ml", color: "var(--primary)", icon: Milk },
+    sleep: { label: "Sleep", unit: "h", color: "var(--sleep-foreground)", icon: Moon },
+    temp: { label: "Temperature", unit: "°C", color: "var(--temperature-foreground)", icon: Thermometer },
   };
   const meta = metricMeta[metric];
   const Icon = meta.icon;
