@@ -643,9 +643,9 @@ function TrendsView({
   }, [prevTotal, metric, days]);
 
   const metricMeta: Record<Metric, { label: string; unit: string; color: string; icon: typeof Milk }> = {
-    milk: { label: "Milk", unit: "ml", color: "hsl(var(--primary))", icon: Milk },
-    sleep: { label: "Sleep", unit: "h", color: "hsl(var(--sleep-foreground))", icon: Moon },
-    temp: { label: "Temperature", unit: "°C", color: "hsl(var(--temperature-foreground))", icon: Thermometer },
+    milk: { label: "Milk", unit: "ml", color: "var(--primary)", icon: Milk },
+    sleep: { label: "Sleep", unit: "h", color: "var(--sleep-foreground)", icon: Moon },
+    temp: { label: "Temperature", unit: "°C", color: "var(--temperature-foreground)", icon: Thermometer },
   };
   const meta = metricMeta[metric];
   const Icon = meta.icon;
@@ -757,16 +757,16 @@ function TrendsView({
                   }
                 }}
               >
-                <CartesianGrid strokeDasharray="3 3" stroke="hsl(var(--border))" />
+                <CartesianGrid strokeDasharray="3 3" stroke="var(--border)" />
                 <XAxis
                   dataKey="label"
-                  tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+                  tick={{ fontSize: 10, fill: "var(--muted-foreground)" }}
                   interval={range === "week" ? 0 : "preserveStartEnd"}
                   axisLine={false}
                   tickLine={false}
                 />
                 <YAxis
-                  tick={{ fontSize: 10, fill: "hsl(var(--muted-foreground))" }}
+                  tick={{ fontSize: 10, fill: "var(--muted-foreground)" }}
                   axisLine={false}
                   tickLine={false}
                   width={36}
@@ -776,8 +776,8 @@ function TrendsView({
                   cursor={{ stroke: meta.color, strokeOpacity: 0.3 }}
                   contentStyle={{
                     borderRadius: 12,
-                    border: "1px solid hsl(var(--border))",
-                    background: "hsl(var(--card))",
+                    border: "1px solid var(--border)",
+                    background: "var(--card)",
                     fontSize: 12,
                   }}
                   formatter={(v: number) => [
