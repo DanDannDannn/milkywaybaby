@@ -484,12 +484,17 @@ function TrendsView({
       const prevFromIso = prevFrom.toISOString();
       const prevToIso = endOfDay(prevTo).toISOString();
 
+      // Local-date key so buckets align with the user's timezone (not UTC)
+      const localKey = (d: Date) => {
+        const pad = (n: number) => String(n).padStart(2, "0");
+        return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())}`;
+      };
+
       // Build empty buckets
       const buckets: Record<string, { milk: number; sleepMs: number; temps: number[] }> = {};
       for (let i = 0; i < days; i++) {
         const d = addDays(from, i);
-        const k = d.toISOString().slice(0, 10);
-        buckets[k] = { milk: 0, sleepMs: 0, temps: [] };
+        buckets[localKey(d)] = { milk: 0, sleepMs: 0, temps: [] };
       }
 
       const [{ data: feeds }, { data: sleeps }, { data: temps }] = await Promise.all([
@@ -522,31 +527,29 @@ function TrendsView({
 
       if (metric === "milk") {
         for (const f of (feeds ?? []) as { occurred_at: string; amount: number; unit: string }[]) {
-          const k = new Date(f.occurred_at).toISOString().slice(0, 10);
+          const k = localKey(new Date(f.occurred_at));
           if (!buckets[k]) continue;
           const ml = f.unit === "oz" ? Number(f.amount) * 29.5735 : Number(f.amount);
           buckets[k].milk += ml;
         }
       } else if (metric === "sleep") {
         for (const s of (sleeps ?? []) as { started_at: string; ended_at: string }[]) {
-          // Distribute duration across the day(s) it falls in
           const startMs = new Date(s.started_at).getTime();
           const endMs = new Date(s.ended_at).getTime();
           if (endMs <= startMs) continue;
-          // Walk per day in our window
           for (let i = 0; i < days; i++) {
             const dayStart = addDays(from, i).getTime();
             const dayEnd = endOfDay(addDays(from, i)).getTime();
             const overlap = Math.min(endMs, dayEnd) - Math.max(startMs, dayStart);
             if (overlap > 0) {
-              const k = addDays(from, i).toISOString().slice(0, 10);
+              const k = localKey(addDays(from, i));
               buckets[k].sleepMs += overlap;
             }
           }
         }
       } else {
         for (const t of (temps ?? []) as { occurred_at: string; value_c: number }[]) {
-          const k = new Date(t.occurred_at).toISOString().slice(0, 10);
+          const k = localKey(new Date(t.occurred_at));
           if (!buckets[k]) continue;
           buckets[k].temps.push(Number(t.value_c));
         }
