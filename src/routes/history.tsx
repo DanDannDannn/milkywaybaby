@@ -372,7 +372,7 @@ function HistoryPage() {
                     <div className="flex-1 min-w-0">
                       <div className="text-base font-extrabold text-foreground">
                         {e.kind === "feed"
-                          ? `${e.data.amount === null || e.data.amount === undefined ? "—" : `${Number(e.data.amount)}${e.data.unit}`} · ${e.data.type === "breast" ? "breast milk" : "formula"}`
+                          ? `${e.data.amount === null || e.data.amount === undefined ? "—" : `${Number(e.data.amount)}${e.data.unit}`} · ${e.data.type === "breast" ? "Purree" : "formula"}`
                           : e.kind === "diaper"
                             ? e.data.type === "wet"
                               ? "Wet"
