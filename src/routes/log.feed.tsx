@@ -127,7 +127,7 @@ function LogFeed() {
               <div className="grid grid-cols-2 gap-2">
                 {(
                   [
-                    { v: "breast", l: "Breast milk" },
+                    { v: "breast", l: "Purree" },
                     { v: "formula", l: "Formula" },
                   ] as const
                 ).map((opt) => (
